@@ -18,11 +18,15 @@ void thread_t::init(uint64_t thd_id, workload * workload) {
 	_wl = workload;
 	srand48_r((_thd_id + 1) * get_sys_clock(), &buffer);
 	_abort_buffer_size = ABORT_BUFFER_SIZE;
-	_abort_buffer = (AbortBufferEntry *) _mm_malloc(sizeof(AbortBufferEntry) * _abort_buffer_size, 64); 
+	_abort_buffer = (AbortBufferEntry *) _mm_malloc(sizeof(AbortBufferEntry) * _abort_buffer_size, 64);
 	for (int i = 0; i < _abort_buffer_size; i++)
 		_abort_buffer[i].query = NULL;
 	_abort_buffer_empty_slots = _abort_buffer_size;
 	_abort_buffer_enable = (g_params["abort_buffer_enable"] == "true");
+  sample_read = sample_record = sample_trans = false;
+  read_cnt = write_cnt = access_cnt = trans_cnt = 0;
+  detect_tool.mark_state = true;
+  report_info.access_cntr = report_info.cont_cntr = 0
 }
 
 uint64_t thread_t::get_thd_id() { return _thd_id; }
@@ -72,8 +76,8 @@ RC thread_t::run() {
 								_abort_buffer[i].query = NULL;
 								_abort_buffer_empty_slots ++;
 								break;
-							} else if (_abort_buffer_empty_slots == 0 
-									  && _abort_buffer[i].ready_time < min_ready_time) 
+							} else if (_abort_buffer_empty_slots == 0
+									  && _abort_buffer[i].ready_time < min_ready_time)
 								min_ready_time = _abort_buffer[i].ready_time;
 						}
 					}
@@ -104,10 +108,17 @@ RC thread_t::run() {
 		m_txn->set_txn_id(get_thd_id() + thd_txn_id * g_thread_cnt);
 		thd_txn_id ++;
 
+    if (thd_txn_id % READRATE == 0)
+      sample_read = true;
+    if (thd_txn_id % TRANSRATE == 0)
+      sample_trans = true;
+    if (thd_txn_id % RECORDRATE == 0)
+      sample_record = true;
+
 		if ((CC_ALG == HSTORE && !HSTORE_LOCAL_TS)
-				|| CC_ALG == MVCC 
+				|| CC_ALG == MVCC
 				|| CC_ALG == HEKATON
-				|| CC_ALG == TIMESTAMP) 
+				|| CC_ALG == TIMESTAMP)
 			m_txn->set_ts(get_next_ts());
 
 		rc = RCOK;
@@ -115,7 +126,7 @@ RC thread_t::run() {
 		if (WORKLOAD == TEST) {
 			uint64_t part_to_access[1] = {0};
 			rc = part_lock_man.lock(m_txn, &part_to_access[0], 1);
-		} else 
+		} else
 			rc = part_lock_man.lock(m_txn, m_query->part_to_access, m_query->part_num);
 #elif CC_ALG == VLL
 		vll_man.vllMainLoop(m_txn, m_query);
@@ -125,21 +136,24 @@ RC thread_t::run() {
 		// In the original OCC paper, start_ts only reads the current ts without advancing it.
 		// But we advance the global ts here to simplify the implementation. However, the final
 		// results should be the same.
-		m_txn->start_ts = get_next_ts(); 
+		m_txn->start_ts = get_next_ts();
 #endif
-		if (rc == RCOK) 
+		if (rc == RCOK)
 		{
 #if CC_ALG != VLL
 			if (WORKLOAD == TEST)
 				rc = runTest(m_txn);
-			else 
+			else
 				rc = m_txn->run_txn(m_query);
 #endif
+      if (sample_trans)
+        trans_cnt++;
+      sample_read = sample_trans = sample_record = false;
 #if CC_ALG == HSTORE
 			if (WORKLOAD == TEST) {
 				uint64_t part_to_access[1] = {0};
 				part_lock_man.unlock(m_txn, &part_to_access[0], 1);
-			} else 
+			} else
 				part_lock_man.unlock(m_txn, m_query->part_to_access, m_query->part_num);
 #endif
 		}
@@ -183,7 +197,7 @@ RC thread_t::run() {
 
 		if (rc == FINISH)
 			return rc;
-		if (!warmup_finish && txn_cnt >= WARMUP / g_thread_cnt) 
+		if (!warmup_finish && txn_cnt >= WARMUP / g_thread_cnt)
 		{
 			stats.clear( get_thd_id() );
 			return FINISH;
@@ -224,7 +238,7 @@ RC thread_t::runTest(txn_man * txn)
 	if (g_test_case == READ_WRITE) {
 		rc = ((TestTxnMan *)txn)->run_txn(g_test_case, 0);
 #if CC_ALG == OCC
-		txn->start_ts = get_next_ts(); 
+		txn->start_ts = get_next_ts();
 #endif
 		rc = ((TestTxnMan *)txn)->run_txn(g_test_case, 1);
 		printf("READ_WRITE TEST PASSED\n");
@@ -234,7 +248,7 @@ RC thread_t::runTest(txn_man * txn)
 		rc = ((TestTxnMan *)txn)->run_txn(g_test_case, 0);
 		if (rc == RCOK)
 			return FINISH;
-		else 
+		else
 			return rc;
 	}
 	assert(false);

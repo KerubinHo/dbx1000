@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include "global.h"
 
@@ -37,6 +37,25 @@ private:
 		ts_t ready_time;
 		base_query * query;
 	};
+
+  bool sample_read;
+  bool sample_record;
+  bool sample_trans;
+  uint64_t read_cnt;
+  uint64_t write_cnt;
+  uint64_t access_cnt;
+  uint64_t trans_cnt;
+
+  struct detect_tool {
+    row_t* rec_set[MAXMARK];
+    bool mark_state;
+  }
+
+  struct report_info {
+    uint64_t * access_cntr;
+    uint64_t * cont_cntr;
+  }
+
 	AbortBufferEntry * _abort_buffer;
 	int _abort_buffer_size;
 	int _abort_buffer_empty_slots;

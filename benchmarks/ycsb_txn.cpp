@@ -36,7 +36,7 @@ RC ycsb_txn_man::run_txn(base_query * query) {
 		while ( !finish_req ) {
 			if (iteration == 0) {
 				m_item = index_read(_wl->the_index, req->key, part_id);
-			} 
+			}
 #if INDEX_STRUCT == IDX_BTREE
 			else {
 				_wl->the_index->index_next(get_thd_id(), m_item);
@@ -45,10 +45,18 @@ RC ycsb_txn_man::run_txn(base_query * query) {
 			}
 #endif
 			row_t * row = ((row_t *)m_item->location);
-			row_t * row_local; 
+			row_t * row_local;
 			access_t type = req->rtype;
-			
+
 			row_local = get_row(row, type);
+      if (h_thd->sample_read) {
+        if (req->rtype == RD || req->rtype == SCAN)
+          h_thd->read_cnt++;
+        else
+          h_thd->write_cnt++;
+      }
+      if(h_thd->sample_trans)
+        h_thd->access_cnt++;
 			if (row_local == NULL) {
 				rc = Abort;
 				goto final;
@@ -70,7 +78,7 @@ RC ycsb_txn_man::run_txn(base_query * query) {
 						char * data = row->get_data();
 						*(uint64_t *)(&data[fid * 10]) = 0;
 //					}
-                } 
+                }
             }
 
 
@@ -84,4 +92,3 @@ final:
 	rc = finish(rc);
 	return rc;
 }
-
