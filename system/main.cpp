@@ -17,6 +17,8 @@ thread_t ** m_thds;
 // defined in parser.cpp
 void parser(int argc, char * argv[]);
 
+bool part_con[g_thread_cnt] = {};
+
 int main(int argc, char* argv[])
 {
 	parser(argc, argv);
@@ -43,6 +45,7 @@ int main(int argc, char* argv[])
 	}
 	m_wl->init();
 	printf("workload initialized!\n");
+
 
 	uint64_t thd_cnt = g_thread_cnt;
 	pthread_t p_thds[thd_cnt - 1];

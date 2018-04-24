@@ -1,6 +1,7 @@
-#pragma once 
+#pragma once
 
 #include <cassert>
+#include <bitset>
 #include "global.h"
 
 #define DECL_SET_VALUE(type) \
@@ -60,7 +61,7 @@ public:
 	void set_value(const char * col_name, void * ptr);
 	char * get_value(int id);
 	char * get_value(char * col_name);
-	
+
 	DECL_SET_VALUE(uint64_t);
 	DECL_SET_VALUE(int64_t);
 	DECL_SET_VALUE(double);
@@ -82,7 +83,7 @@ public:
 	// for concurrency control. can be lock, timestamp etc.
 	RC get_row(access_t type, txn_man * txn, row_t *& row);
 	void return_row(access_t type, txn_man * txn, row_t * row);
-	
+
   #if CC_ALG == DL_DETECT || CC_ALG == NO_WAIT || CC_ALG == WAIT_DIE
     Row_lock * manager;
   #elif CC_ALG == TIMESTAMP
@@ -101,6 +102,7 @@ public:
   	Row_vll * manager;
   #endif
 	char * data;
+  bool * mark;
 	table_t * table;
 private:
 	// primary key should be calculated from the data stored in the row.

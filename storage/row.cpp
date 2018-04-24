@@ -15,7 +15,7 @@
 #include "mem_alloc.h"
 #include "manager.h"
 
-RC 
+RC
 row_t::init(table_t * host_table, uint64_t part_id, uint64_t row_id) {
 	_row_id = row_id;
 	_part_id = part_id;
@@ -23,15 +23,17 @@ row_t::init(table_t * host_table, uint64_t part_id, uint64_t row_id) {
 	Catalog * schema = host_table->get_schema();
 	int tuple_size = schema->get_tuple_size();
 	data = (char *) _mm_malloc(sizeof(char) * tuple_size, 64);
+  mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
+  memset(mark, 0, g_thread_cnt * sizeof(bool));
 	return RCOK;
 }
-void 
-row_t::init(int size) 
+void
+row_t::init(int size)
 {
 	data = (char *) _mm_malloc(size, 64);
 }
 
-RC 
+RC
 row_t::switch_schema(table_t * host_table) {
 	this->table = host_table;
 	return RCOK;
@@ -61,22 +63,22 @@ void row_t::init_manager(row_t * row) {
 #endif
 }
 
-table_t * row_t::get_table() { 
-	return table; 
+table_t * row_t::get_table() {
+	return table;
 }
 
-Catalog * row_t::get_schema() { 
-	return get_table()->get_schema(); 
+Catalog * row_t::get_schema() {
+	return get_table()->get_schema();
 }
 
-const char * row_t::get_table_name() { 
-	return get_table()->get_table_name(); 
+const char * row_t::get_table_name() {
+	return get_table()->get_table_name();
 };
 uint64_t row_t::get_tuple_size() {
 	return get_schema()->get_tuple_size();
 }
 
-uint64_t row_t::get_field_cnt() { 
+uint64_t row_t::get_field_cnt() {
 	return get_schema()->field_cnt;
 }
 
@@ -120,7 +122,7 @@ char * row_t::get_value(char * col_name) {
 
 char * row_t::get_data() { return data; }
 
-void row_t::set_data(char * data, uint64_t size) { 
+void row_t::set_data(char * data, uint64_t size) {
 	memcpy(this->data, data, size);
 }
 // copy from the src to this
@@ -139,29 +141,29 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 	lock_t lt = (type == RD || type == SCAN)? LOCK_SH : LOCK_EX;
 #if CC_ALG == DL_DETECT
 	uint64_t * txnids;
-	int txncnt; 
-	rc = this->manager->lock_get(lt, txn, txnids, txncnt);	
+	int txncnt;
+	rc = this->manager->lock_get(lt, txn, txnids, txncnt);
 #else
 	rc = this->manager->lock_get(lt, txn);
 #endif
 
 	if (rc == RCOK) {
 		row = this;
-	} else if (rc == Abort) {} 
+	} else if (rc == Abort) {}
 	else if (rc == WAIT) {
 		ASSERT(CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT);
 		uint64_t starttime = get_sys_clock();
-#if CC_ALG == DL_DETECT	
+#if CC_ALG == DL_DETECT
 		bool dep_added = false;
 #endif
 		uint64_t endtime;
 		txn->lock_abort = false;
 		INC_STATS(txn->get_thd_id(), wait_cnt, 1);
-		while (!txn->lock_ready && !txn->lock_abort) 
+		while (!txn->lock_ready && !txn->lock_abort)
 		{
-#if CC_ALG == WAIT_DIE 
+#if CC_ALG == WAIT_DIE
 			continue;
-#elif CC_ALG == DL_DETECT	
+#elif CC_ALG == DL_DETECT
 			uint64_t last_detect = starttime;
 			uint64_t last_try = starttime;
 
@@ -187,19 +189,19 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 					ok = dl_detector.detect_cycle(txn->get_txn_id());
 					if (ok == 16)  // failed to lock the deadlock detector
 						last_try = now;
-					else if (ok == 0) 
+					else if (ok == 0)
 						last_detect = now;
 					else if (ok == 1) {
 						last_detect = now;
 					}
 				}
-			} else 
+			} else
 				PAUSE
 #endif
 		}
-		if (txn->lock_ready) 
+		if (txn->lock_ready)
 			rc = RCOK;
-		else if (txn->lock_abort) { 
+		else if (txn->lock_abort) {
 			rc = Abort;
 			return_row(type, txn, NULL);
 		}
@@ -208,21 +210,21 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 		row = this;
 	}
 	return rc;
-#elif CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == HEKATON 
+#elif CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == HEKATON
 	uint64_t thd_id = txn->get_thd_id();
 	// For TIMESTAMP RD, a new copy of the row will be returned.
 	// for MVCC RD, the version will be returned instead of a copy
 	// So for MVCC RD-WR, the version should be explicitly copied.
 	//row_t * newr = NULL;
   #if CC_ALG == TIMESTAMP
-	// TODO. should not call malloc for each row read. Only need to call malloc once 
+	// TODO. should not call malloc for each row read. Only need to call malloc once
 	// before simulation starts, like TicToc and Silo.
 	txn->cur_row = (row_t *) mem_allocator.alloc(sizeof(row_t), this->get_part_id());
 	txn->cur_row->init(get_table(), this->get_part_id());
   #endif
 
 	// TODO need to initialize the table/catalog information.
-	TsType ts_type = (type == RD)? R_REQ : P_REQ; 
+	TsType ts_type = (type == RD)? R_REQ : P_REQ;
 	rc = this->manager->access(txn, ts_type, row);
 	if (rc == RCOK ) {
 		row = txn->cur_row;
@@ -249,7 +251,7 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 #elif CC_ALG == TICTOC || CC_ALG == SILO
 	// like OCC, tictoc also makes a local copy for each read/write
 	row->table = get_table();
-	TsType ts_type = (type == RD)? R_REQ : P_REQ; 
+	TsType ts_type = (type == RD)? R_REQ : P_REQ;
 	rc = this->manager->access(txn, ts_type, row);
 	return rc;
 #elif CC_ALG == HSTORE || CC_ALG == VLL
@@ -260,24 +262,24 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 #endif
 }
 
-// the "row" is the row read out in get_row(). 
-// For locking based CC_ALG, the "row" is the same as "this". 
+// the "row" is the row read out in get_row().
+// For locking based CC_ALG, the "row" is the same as "this".
 // For timestamp based CC_ALG, the "row" != "this", and the "row" must be freed.
-// For MVCC, the row will simply serve as a version. The version will be 
+// For MVCC, the row will simply serve as a version. The version will be
 // delete during history cleanup.
 // For TIMESTAMP, the row will be explicity deleted at the end of access().
 // (cf. row_ts.cpp)
-void row_t::return_row(access_t type, txn_man * txn, row_t * row) {	
+void row_t::return_row(access_t type, txn_man * txn, row_t * row) {
 #if CC_ALG == WAIT_DIE || CC_ALG == NO_WAIT || CC_ALG == DL_DETECT
 	assert (row == NULL || row == this || type == XP);
 	if (ROLL_BACK && type == XP) {// recover from previous writes.
 		this->copy(row);
 	}
 	this->manager->lock_release(txn);
-#elif CC_ALG == TIMESTAMP || CC_ALG == MVCC 
+#elif CC_ALG == TIMESTAMP || CC_ALG == MVCC
 	// for RD or SCAN or XP, the row should be deleted.
 	// because all WR should be companied by a RD
-	// for MVCC RD, the row is not copied, so no need to free. 
+	// for MVCC RD, the row is not copied, so no need to free.
   #if CC_ALG == TIMESTAMP
 	if (type == RD || type == SCAN) {
 		row->free_row();
@@ -304,8 +306,7 @@ void row_t::return_row(access_t type, txn_man * txn, row_t * row) {
 	return;
 #elif CC_ALG == HSTORE || CC_ALG == VLL
 	return;
-#else 
+#else
 	assert(false);
 #endif
 }
-

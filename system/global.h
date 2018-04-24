@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include "stdint.h"
 #include <unistd.h>
@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include <time.h> 
+#include <time.h>
 #include <sys/time.h>
 #include <math.h>
 
@@ -48,7 +48,7 @@ typedef int64_t SInt64;
 typedef uint64_t ts_t; // time stamp type
 
 /******************************************/
-// Global Data Structure 
+// Global Data Structure
 /******************************************/
 extern mem_alloc mem_allocator;
 extern Stats stats;
@@ -77,7 +77,7 @@ extern bool g_prt_lat_distr;
 extern UInt32 g_part_cnt;
 extern UInt32 g_virtual_part_cnt;
 extern UInt32 g_thread_cnt;
-extern ts_t g_abort_penalty; 
+extern ts_t g_abort_penalty;
 extern bool g_central_man;
 extern UInt32 g_ts_alloc;
 extern bool g_key_order;
@@ -86,7 +86,7 @@ extern ts_t g_timeout;
 extern ts_t g_dl_loop_detect;
 extern bool g_ts_batch_alloc;
 extern UInt32 g_ts_batch_num;
-
+extern bool part_con[];
 extern map<string, string> g_params;
 
 // YCSB
@@ -136,14 +136,14 @@ enum access_t {RD, WR, XP, SCAN};
 /* LOCK */
 enum lock_t {LOCK_EX, LOCK_SH, LOCK_NONE };
 /* TIMESTAMP */
-enum TsType {R_REQ, W_REQ, P_REQ, XP_REQ}; 
+enum TsType {R_REQ, W_REQ, P_REQ, XP_REQ};
 
 
 #define MSG(str, args...) { \
 	printf("[%s : %d] " str, __FILE__, __LINE__, args); } \
 //	printf(args); }
 
-// principal index structure. The workload may decide to use a different 
+// principal index structure. The workload may decide to use a different
 // index structure for specific purposes. (e.g. non-primary key access should use hash)
 #if (INDEX_STRUCT == IDX_BTREE)
 #define INDEX		index_btree
@@ -157,4 +157,3 @@ enum TsType {R_REQ, W_REQ, P_REQ, XP_REQ};
 #ifndef UINT64_MAX
 #define UINT64_MAX 		18446744073709551615UL
 #endif // UINT64_MAX
-

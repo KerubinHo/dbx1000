@@ -39,21 +39,25 @@ private:
 	};
 
   bool sample_read;
-  bool sample_record;
+  bool sample_part;
   bool sample_trans;
   uint64_t read_cnt;
   uint64_t write_cnt;
-  uint64_t access_cnt;
+  long double access_cnt;
   uint64_t trans_cnt;
+  uint64_t next_lock;
 
-  struct detect_tool {
-    row_t* rec_set[MAXMARK];
-    bool mark_state;
-  }
-
+  bool mark_state;
+  bool in_prog;
+  base_query * part_query;
+  row_t * rec_set[MAXMARK];
+  uint64_t mark_cntr;
+  uint64_t sample_cntr;
   struct report_info {
-    uint64_t * access_cntr;
-    uint64_t * cont_cntr;
+    uint64_t cont_cntr;
+    uint64_t access_cntr;
+    uint64_t part_success;
+    uint64_t part_attempt;
   }
 
 	AbortBufferEntry * _abort_buffer;

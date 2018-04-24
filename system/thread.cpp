@@ -23,10 +23,10 @@ void thread_t::init(uint64_t thd_id, workload * workload) {
 		_abort_buffer[i].query = NULL;
 	_abort_buffer_empty_slots = _abort_buffer_size;
 	_abort_buffer_enable = (g_params["abort_buffer_enable"] == "true");
-  sample_read = sample_record = sample_trans = false;
+  sample_read = sample_part = sample_trans = false;
   read_cnt = write_cnt = access_cnt = trans_cnt = 0;
-  detect_tool.mark_state = true;
-  report_info.access_cntr = report_info.cont_cntr = 0
+  mark_state = true;
+  access_cntr = cont_cntr = 0
 }
 
 uint64_t thread_t::get_thd_id() { return _thd_id; }
@@ -112,8 +112,31 @@ RC thread_t::run() {
       sample_read = true;
     if (thd_txn_id % TRANSRATE == 0)
       sample_trans = true;
-    if (thd_txn_id % RECORDRATE == 0)
-      sample_record = true;
+    if (thd_txn_id % PARTRATE == 0)
+      sample_part = true;
+
+    if (sample_part) {
+      if (!in_prog) {
+        for (int i = 0; i < part_query->part_num; i++) {
+          part_con[part_query->part_to_access[i]] = false;
+        }
+        in_prog = true;
+        part_query = m_query;
+        next_lock = 0;
+      }
+      while (next_lock < part_query->part_num) {
+        if (ATOM_CAS(&part_con[part_query->part_to_access[next_lock]], false, true)) {
+          report_info.part_success++;
+          next_lock++;
+          in_prog = true;
+        }
+        else {
+          report_info.part_attempt++;
+          in_prog = false;
+          break;
+        }
+      }
+    }
 
 		if ((CC_ALG == HSTORE && !HSTORE_LOCAL_TS)
 				|| CC_ALG == MVCC
@@ -148,7 +171,7 @@ RC thread_t::run() {
 #endif
       if (sample_trans)
         trans_cnt++;
-      sample_read = sample_trans = sample_record = false;
+      sample_read = sample_trans = sample_part = false;
 #if CC_ALG == HSTORE
 			if (WORKLOAD == TEST) {
 				uint64_t part_to_access[1] = {0};

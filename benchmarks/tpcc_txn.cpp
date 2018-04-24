@@ -67,7 +67,7 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
   if (h_thd->sample_read)
       h_thd->read_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=(1.0/NUM_WH);
 	if (r_wh_local == NULL) {
 		return finish(Abort);
 	}
@@ -79,7 +79,7 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
     if (h_thd->sample_read)
       h_thd->write_cnt++;
     if(h_thd->sample_trans)
-      h_thd->access_cnt++;
+      h_thd->access_cnt+=(1.0/NUM_WH);
 	}
 	char w_name[11];
 	char * tmp_str = r_wh_local->get_value(W_NAME);
@@ -97,7 +97,7 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
   if (h_thd->sample_read)
     h_thd->read_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=1.0/DIST_PER_WARE;
 	if (r_dist_local == NULL) {
 		return finish(Abort);
 	}
@@ -108,7 +108,7 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
   if (h_thd->sample_read)
     h_thd->write_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=1.0/DIST_PER_WARE;
 	char d_name[11];
 	tmp_str = r_dist_local->get_value(D_NAME);
 	memcpy(d_name, tmp_str, 10);
@@ -193,7 +193,7 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
   if (h_thd->sample_read)
     h_thd->read_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=1.0/g_cust_per_dist;
 	if (r_cust_local == NULL) {
 		return finish(Abort);
 	}
@@ -210,7 +210,7 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
   if (h_thd->sample_read)
     h_thd->write_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=1.0/g_cust_per_dist;
 
 	char * c_credit = r_cust_local->get_value(C_CREDIT);
 
@@ -243,21 +243,27 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
 	  history (h_c_d_id, h_c_w_id, h_c_id, h_d_id, h_w_id, h_date, h_amount, h_data)
 	  VALUES (:c_d_id, :c_w_id, :c_id, :d_id, :w_id, :datetime, :h_amount, :h_data);
 	  +=============================================================================*/
-//	row_t * r_hist;
-//	uint64_t row_id;
-//	_wl->t_history->get_new_row(r_hist, 0, row_id);
-//	r_hist->set_value(H_C_ID, c_id);
-//	r_hist->set_value(H_C_D_ID, c_d_id);
-//	r_hist->set_value(H_C_W_ID, c_w_id);
-//	r_hist->set_value(H_D_ID, d_id);
-//	r_hist->set_value(H_W_ID, w_id);
-//	int64_t date = 2013;
-//	r_hist->set_value(H_DATE, date);
-//	r_hist->set_value(H_AMOUNT, h_amount);
+  if (h_thd->sample_read)
+    h_thd->write_cnt++;
+  if(h_thd->sample_trans)
+    h_thd->access_cnt+=1.0/(_wl->t_history->get_table_size());
+
+
+	row_t * r_hist;
+	uint64_t row_id;
+	_wl->t_history->get_new_row(r_hist, 0, row_id);
+	r_hist->set_value(H_C_ID, c_id);
+	r_hist->set_value(H_C_D_ID, c_d_id);
+	r_hist->set_value(H_C_W_ID, c_w_id);
+	r_hist->set_value(H_D_ID, d_id);
+	r_hist->set_value(H_W_ID, w_id);
+	int64_t date = 2013;
+	r_hist->set_value(H_DATE, date);
+	r_hist->set_value(H_AMOUNT, h_amount);
 #if !TPCC_SMALL
-//	r_hist->set_value(H_DATA, h_data);
+	r_hist->set_value(H_DATA, h_data);
 #endif
-//	insert_row(r_hist, _wl->t_history);
+	insert_row(r_hist, _wl->t_history);
 
 	assert( rc == RCOK );
 	return finish(rc);
@@ -289,7 +295,7 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
   if (h_thd->sample_read)
     h_thd->read_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=(1.0/NUM_WH);
 	if (r_wh_local == NULL) {
 		return finish(Abort);
 	}
@@ -306,7 +312,7 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
   if (h_thd->sample_read)
     h_thd->read_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=1.0/g_cust_per_dist;
 	if (r_cust_local == NULL) {
 		return finish(Abort);
 	}
@@ -330,9 +336,9 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 	row_t * r_dist = ((row_t *)item->location);
 	row_t * r_dist_local = get_row(r_dist, WR);
   if (h_thd->sample_read)
-    h_thd->read_cnt++;
+    h_thd->write_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=1.0/DIST_PER_WARE;
 	if (r_dist_local == NULL) {
 		return finish(Abort);
 	}
@@ -345,34 +351,42 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
   if (h_thd->sample_read)
     h_thd->write_cnt++;
   if(h_thd->sample_trans)
-    h_thd->access_cnt++;
+    h_thd->access_cnt+=1.0/DIST_PER_WARE;
 
 	/*========================================================================================+
 	EXEC SQL INSERT INTO ORDERS (o_id, o_d_id, o_w_id, o_c_id, o_entry_d, o_ol_cnt, o_all_local)
 		VALUES (:o_id, :d_id, :w_id, :c_id, :datetime, :o_ol_cnt, :o_all_local);
 	+========================================================================================*/
-//	row_t * r_order;
-//	uint64_t row_id;
-//	_wl->t_order->get_new_row(r_order, 0, row_id);
-//	r_order->set_value(O_ID, o_id);
-//	r_order->set_value(O_C_ID, c_id);
-//	r_order->set_value(O_D_ID, d_id);
-//	r_order->set_value(O_W_ID, w_id);
-//	r_order->set_value(O_ENTRY_D, o_entry_d);
-//	r_order->set_value(O_OL_CNT, ol_cnt);
-//	int64_t all_local = (remote? 0 : 1);
-//	r_order->set_value(O_ALL_LOCAL, all_local);
-//	insert_row(r_order, _wl->t_order);
+	row_t * r_order;
+	uint64_t row_id;
+	_wl->t_order->get_new_row(r_order, 0, row_id);
+	r_order->set_value(O_ID, o_id);
+	r_order->set_value(O_C_ID, c_id);
+	r_order->set_value(O_D_ID, d_id);
+	r_order->set_value(O_W_ID, w_id);
+	r_order->set_value(O_ENTRY_D, o_entry_d);
+	r_order->set_value(O_OL_CNT, ol_cnt);
+	int64_t all_local = (remote? 0 : 1);
+	r_order->set_value(O_ALL_LOCAL, all_local);
+	insert_row(r_order, _wl->t_order);
+  if (h_thd->sample_read)
+    h_thd->write_cnt++;
+  if(h_thd->sample_trans)
+    h_thd->access_cnt+=1.0/(1.0/_wl->t_order->get_table_size());
 	/*=======================================================+
     EXEC SQL INSERT INTO NEW_ORDER (no_o_id, no_d_id, no_w_id)
         VALUES (:o_id, :d_id, :w_id);
     +=======================================================*/
-//	row_t * r_no;
-//	_wl->t_neworder->get_new_row(r_no, 0, row_id);
-//	r_no->set_value(NO_O_ID, o_id);
-//	r_no->set_value(NO_D_ID, d_id);
-//	r_no->set_value(NO_W_ID, w_id);
-//	insert_row(r_no, _wl->t_neworder);
+	row_t * r_no;
+	_wl->t_neworder->get_new_row(r_no, 0, row_id);
+	r_no->set_value(NO_O_ID, o_id);
+	r_no->set_value(NO_D_ID, d_id);
+	r_no->set_value(NO_W_ID, w_id);
+	insert_row(r_no, _wl->t_neworder);
+  if (h_thd->sample_read)
+    h_thd->write_cnt++;
+  if(h_thd->sample_trans)
+    h_thd->access_cnt+=1.0/(1.0/_wl->t_neworder->get_table_size());
 	for (UInt32 ol_number = 0; ol_number < ol_cnt; ol_number++) {
 
 		uint64_t ol_i_id = query->items[ol_number].ol_i_id;
@@ -393,7 +407,7 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
     if (h_thd->sample_read)
       h_thd->read_cnt++;
     if(h_thd->sample_trans)
-      h_thd->access_cnt++;
+      h_thd->access_cnt+=1.0/g_max_items;
 		if (r_item_local == NULL) {
 			return finish(Abort);
 		}
@@ -428,7 +442,7 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
     if (h_thd->sample_read)
       h_thd->read_cnt++;
     if(h_thd->sample_trans)
-      h_thd->access_cnt++;
+      h_thd->access_cnt+=1.0/g_max_items;
 		if (r_stock_local == NULL) {
 			return finish(Abort);
 		}
@@ -462,7 +476,7 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
     if (h_thd->sample_read)
       h_thd->write_cnt++;
     if(h_thd->sample_trans)
-      h_thd->access_cnt++;
+      h_thd->access_cnt+=1.0/g_max_items;
 
 		/*====================================================+
 		EXEC SQL INSERT
@@ -474,22 +488,26 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 				:ol_quantity, :ol_amount, :ol_dist_info);
 		+====================================================*/
 		// XXX district info is not inserted.
-//		row_t * r_ol;
-//		uint64_t row_id;
-//		_wl->t_orderline->get_new_row(r_ol, 0, row_id);
-//		r_ol->set_value(OL_O_ID, &o_id);
-//		r_ol->set_value(OL_D_ID, &d_id);
-//		r_ol->set_value(OL_W_ID, &w_id);
-//		r_ol->set_value(OL_NUMBER, &ol_number);
-//		r_ol->set_value(OL_I_ID, &ol_i_id);
+		row_t * r_ol;
+		uint64_t row_id;
+		_wl->t_orderline->get_new_row(r_ol, 0, row_id);
+		r_ol->set_value(OL_O_ID, &o_id);
+		r_ol->set_value(OL_D_ID, &d_id);
+		r_ol->set_value(OL_W_ID, &w_id);
+		r_ol->set_value(OL_NUMBER, &ol_number);
+		r_ol->set_value(OL_I_ID, &ol_i_id);
 #if !TPCC_SMALL
-//		int w_tax=1, d_tax=1;
-//		int64_t ol_amount = ol_quantity * i_price * (1 + w_tax + d_tax) * (1 - c_discount);
-//		r_ol->set_value(OL_SUPPLY_W_ID, &ol_supply_w_id);
-//		r_ol->set_value(OL_QUANTITY, &ol_quantity);
-//		r_ol->set_value(OL_AMOUNT, &ol_amount);
+		int w_tax=1, d_tax=1;
+		int64_t ol_amount = ol_quantity * i_price * (1 + w_tax + d_tax) * (1 - c_discount);
+		r_ol->set_value(OL_SUPPLY_W_ID, &ol_supply_w_id);
+		r_ol->set_value(OL_QUANTITY, &ol_quantity);
+		r_ol->set_value(OL_AMOUNT, &ol_amount);
 #endif
-//		insert_row(r_ol, _wl->t_orderline);
+		insert_row(r_ol, _wl->t_orderline);
+    if (h_thd->sample_read)
+      h_thd->write_cnt++;
+    if(h_thd->sample_trans)
+      h_thd->access_cnt+=(1.0/_wl->t_orderline->get_table_size());
 	}
 	assert( rc == RCOK );
 	return finish(rc);
