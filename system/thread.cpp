@@ -125,7 +125,7 @@ RC thread_t::run() {
         next_lock = 0;
       }
       while (next_lock < part_query->part_num) {
-        if (ATOM_CAS(&part_con[part_query->part_to_access[next_lock]], false, true)) {
+        if (ATOM_CAS(&(part_con[part_query->part_to_access[next_lock]]), false, true)) {
           report_info.part_success++;
           next_lock++;
           in_prog = true;
