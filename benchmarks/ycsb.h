@@ -21,7 +21,7 @@ private:
 	void init_table_parallel();
 	void * init_table_slice();
 	static void * threadInitTable(void * This) {
-		((ycsb_wl *)This)->init_table_slice(); 
+		((ycsb_wl *)This)->init_table_slice();
 		return NULL;
 	}
 	pthread_mutex_t insert_lock;
@@ -32,8 +32,8 @@ private:
 class ycsb_txn_man : public txn_man
 {
 public:
-	void init(thread_t * h_thd, workload * h_wl, uint64_t part_id); 
-	RC run_txn(base_query * query);
+	void init(thread_t * h_thd, workload * h_wl, uint64_t part_id);
+	RC run_txn(thread_t * h_thd, base_query * query);
 private:
 	uint64_t row_cnt;
 	ycsb_wl * _wl;

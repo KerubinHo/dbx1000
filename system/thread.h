@@ -23,6 +23,8 @@ public:
 	// to run with pthread.
 	// conversion is done within the function.
 	RC 			run();
+  void thread_t::sample_row(access_t type, size_t table_size);
+  void mark_row(row_t * row);
 private:
 	uint64_t 	_host_cid;
 	uint64_t 	_cur_cid;
@@ -41,10 +43,6 @@ private:
   bool sample_read;
   bool sample_part;
   bool sample_trans;
-  uint64_t read_cnt;
-  uint64_t write_cnt;
-  long double access_cnt;
-  uint64_t trans_cnt;
   uint64_t next_lock;
 
   bool mark_state;
@@ -54,6 +52,10 @@ private:
   uint64_t mark_cntr;
   uint64_t sample_cntr;
   struct report_info {
+    uint64_t read_cnt;
+    uint64_t write_cnt;
+    long double access_cnt;
+    uint64_t trans_cnt;
     uint64_t cont_cntr;
     uint64_t access_cntr;
     uint64_t part_success;

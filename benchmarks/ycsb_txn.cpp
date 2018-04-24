@@ -21,7 +21,7 @@ void ycsb_txn_man::init(thread_t * h_thd, workload * h_wl, uint64_t thd_id) {
 	_wl = (ycsb_wl *) h_wl;
 }
 
-RC ycsb_txn_man::run_txn(base_query * query) {
+RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 	RC rc;
 	ycsb_query * m_query = (ycsb_query *) query;
 	ycsb_wl * wl = (ycsb_wl *) h_wl;
@@ -50,47 +50,12 @@ RC ycsb_txn_man::run_txn(base_query * query) {
 			access_t type = req->rtype;
 
 			row_local = get_row(row, type);
-      if (h_thd->sample_read) {
-        if (req->rtype == RD || req->rtype == SCAN)
-          h_thd->read_cnt++;
-        else
-          h_thd->write_cnt++;
-      }
-      if(h_thd->sample_trans)
-        h_thd->access_cnt+=1.0/SYNTH_TABLE_SIZE;
+      h_thd->sample_row(row_local, type, SYNTH_TABLE_SIZE);
 			if (row_local == NULL) {
 				rc = Abort;
 				goto final;
 			}
-      if (h_thd->mark_state && !row_local->mark[_thd_id]) {
-        row_local->mark[_thd_id] ^= 1;
-        rec_set[mark_cntr] = row_local;
-        mark_cntr++;
-        mark_cntr %= MAXMARK;
-        if (mark_cntr == 0) {
-          h_thd->mark_state = false;
-          sample_cntr = 0;
-        }
-      } else if (!h_thd->mark_state) {
-        if (sample_cntr % RECORDRATE == 0) {
-          for (int i = 0; i < h_thd._thd_id; i++) {
-            report_info.cont_cntr += row_local->mark[i];
-          }
-          for (int i = h_thd.thd_id + 1; i < g_thread_cnt; i++) {
-            report_info.cont_cntr += row_local->mark[i];
-          }
-          report_info.access_cntr += g_thread_cnt;
-          mark_cntr++;
-          mark_cntr %= MAXDETECT;
-          if (mark_cntr == 0) {
-            h_thd->mark_state = true;
-            for (int i = 0; i < MAXMARK; i++) {
-              rec_set[i]->mark[_thd_id] = 0;
-            }
-          }
-        }
-        sample_cntr++;
-      }
+      h_thd->mark_row(row_local);
 
 			// Computation //
 			// Only do computation when there are more than 1 requests.

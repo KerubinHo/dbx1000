@@ -15,13 +15,13 @@ void tpcc_txn_man::init(thread_t * h_thd, workload * h_wl, uint64_t thd_id) {
 	_wl = (tpcc_wl *) h_wl;
 }
 
-RC tpcc_txn_man::run_txn(base_query * query) {
+RC tpcc_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 	tpcc_query * m_query = (tpcc_query *) query;
 	switch (m_query->type) {
 		case TPCC_PAYMENT :
-			return run_payment(m_query); break;
+			return run_payment(h_thd, m_query); break;
 		case TPCC_NEW_ORDER :
-			return run_new_order(m_query); break;
+			return run_new_order(h_thd, m_query); break;
 /*		case TPCC_ORDER_STATUS :
 			return run_order_status(m_query); break;
 		case TPCC_DELIVERY :
@@ -33,7 +33,7 @@ RC tpcc_txn_man::run_txn(base_query * query) {
 	}
 }
 
-RC tpcc_txn_man::run_payment(tpcc_query * query) {
+RC tpcc_txn_man::run_payment(thread_t * h_thd, tpcc_query * query) {
 	RC rc = RCOK;
 	uint64_t key;
 	itemid_t * item;
@@ -59,18 +59,20 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
 	assert(item != NULL);
 	row_t * r_wh = ((row_t *)item->location);
 	row_t * r_wh_local;
-	if (g_wh_update)
+	if (g_wh_update) {
 		r_wh_local = get_row(r_wh, WR);
-	else
+    h_thd->sample_row(WR, NUM_WH);
+  }
+	else {
 		r_wh_local = get_row(r_wh, RD);
+    h_thd->sample_row(RD, NUM_WH);
+  }
 
-  if (h_thd->sample_read)
-      h_thd->read_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=(1.0/NUM_WH);
 	if (r_wh_local == NULL) {
 		return finish(Abort);
 	}
+  h_thd->mark_row(r_wh_local);
+
 	double w_ytd;
 
 	r_wh_local->get_value(W_YTD, w_ytd);
@@ -94,21 +96,16 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
 	assert(item != NULL);
 	row_t * r_dist = ((row_t *)item->location);
 	row_t * r_dist_local = get_row(r_dist, WR);
-  if (h_thd->sample_read)
-    h_thd->read_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/DIST_PER_WARE;
+  h_thd->sample_row(RD, DIST_PER_WARE);
 	if (r_dist_local == NULL) {
 		return finish(Abort);
 	}
+  h_thd->mark_row(r_dist_local);
 
 	double d_ytd;
 	r_dist_local->get_value(D_YTD, d_ytd);
 	r_dist_local->set_value(D_YTD, d_ytd + query->h_amount);
-  if (h_thd->sample_read)
-    h_thd->write_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/DIST_PER_WARE;
+  h_thd->sample_row(WR, DIST_PER_WARE);
 	char d_name[11];
 	tmp_str = r_dist_local->get_value(D_NAME);
 	memcpy(d_name, tmp_str, 10);
@@ -190,13 +187,11 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
    		WHERE c_w_id = :c_w_id AND c_d_id = :c_d_id AND c_id = :c_id;
    	+======================================================================*/
 	row_t * r_cust_local = get_row(r_cust, WR);
-  if (h_thd->sample_read)
-    h_thd->read_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/g_cust_per_dist;
+  h_thd->sample_row(RD, DIST_PER_WARE);
 	if (r_cust_local == NULL) {
 		return finish(Abort);
 	}
+  h_thd->mark_row(r_cust_local);
 	double c_balance;
 	double c_ytd_payment;
 	double c_payment_cnt;
@@ -207,10 +202,7 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
 	r_cust_local->set_value(C_YTD_PAYMENT, c_ytd_payment + query->h_amount);
 	r_cust_local->get_value(C_PAYMENT_CNT, c_payment_cnt);
 	r_cust_local->set_value(C_PAYMENT_CNT, c_payment_cnt + 1);
-  if (h_thd->sample_read)
-    h_thd->write_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/g_cust_per_dist;
+  h_thd->sample_row(WR, g_cust_per_dist);
 
 	char * c_credit = r_cust_local->get_value(C_CREDIT);
 
@@ -243,11 +235,7 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
 	  history (h_c_d_id, h_c_w_id, h_c_id, h_d_id, h_w_id, h_date, h_amount, h_data)
 	  VALUES (:c_d_id, :c_w_id, :c_id, :d_id, :w_id, :datetime, :h_amount, :h_data);
 	  +=============================================================================*/
-  if (h_thd->sample_read)
-    h_thd->write_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/(_wl->t_history->get_table_size());
-
+  h_thd->sample_row(WR, _wl->t_history->get_table_size());
 
 	row_t * r_hist;
 	uint64_t row_id;
@@ -264,12 +252,13 @@ RC tpcc_txn_man::run_payment(tpcc_query * query) {
 	r_hist->set_value(H_DATA, h_data);
 #endif
 	insert_row(r_hist, _wl->t_history);
+  h_thd->mark_row(r_hist);
 
 	assert( rc == RCOK );
 	return finish(rc);
 }
 
-RC tpcc_txn_man::run_new_order(tpcc_query * query) {
+RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 	RC rc = RCOK;
 	uint64_t key;
 	itemid_t * item;
@@ -292,13 +281,11 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 	assert(item != NULL);
 	row_t * r_wh = ((row_t *)item->location);
 	row_t * r_wh_local = get_row(r_wh, RD);
-  if (h_thd->sample_read)
-    h_thd->read_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=(1.0/NUM_WH);
+  h_thd->sample_row(RD, NUM_WH);
 	if (r_wh_local == NULL) {
 		return finish(Abort);
 	}
+  h_thd->mark_row(r_wh_local);
 
 
 	double w_tax;
@@ -309,13 +296,11 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 	assert(item != NULL);
 	row_t * r_cust = (row_t *) item->location;
 	row_t * r_cust_local = get_row(r_cust, RD);
-  if (h_thd->sample_read)
-    h_thd->read_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/g_cust_per_dist;
+  h_thd->sample_row(RD, g_cust_per_dist);
 	if (r_cust_local == NULL) {
 		return finish(Abort);
 	}
+  h_thd->mark_row(r_cust_local);
 	uint64_t c_discount;
 	//char * c_last;
 	//char * c_credit;
@@ -335,23 +320,19 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 	assert(item != NULL);
 	row_t * r_dist = ((row_t *)item->location);
 	row_t * r_dist_local = get_row(r_dist, WR);
-  if (h_thd->sample_read)
-    h_thd->write_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/DIST_PER_WARE;
+  h_thd->sample_row(RD, DIST_PER_WARE);
+
 	if (r_dist_local == NULL) {
 		return finish(Abort);
 	}
+  h_thd->mark_row(r_dist_local);
 	//double d_tax;
 	int64_t o_id;
 	//d_tax = *(double *) r_dist_local->get_value(D_TAX);
 	o_id = *(int64_t *) r_dist_local->get_value(D_NEXT_O_ID);
 	o_id ++;
 	r_dist_local->set_value(D_NEXT_O_ID, o_id);
-  if (h_thd->sample_read)
-    h_thd->write_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/DIST_PER_WARE;
+  h_thd->sample_row(WR, DIST_PER_WARE);
 
 	/*========================================================================================+
 	EXEC SQL INSERT INTO ORDERS (o_id, o_d_id, o_w_id, o_c_id, o_entry_d, o_ol_cnt, o_all_local)
@@ -369,10 +350,8 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 	int64_t all_local = (remote? 0 : 1);
 	r_order->set_value(O_ALL_LOCAL, all_local);
 	insert_row(r_order, _wl->t_order);
-  if (h_thd->sample_read)
-    h_thd->write_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/(1.0/_wl->t_order->get_table_size());
+  h_thd->sample_row(WR, _wl->t_order->get_table_size());
+  h_thd->mark_row(r_order);
 	/*=======================================================+
     EXEC SQL INSERT INTO NEW_ORDER (no_o_id, no_d_id, no_w_id)
         VALUES (:o_id, :d_id, :w_id);
@@ -383,10 +362,8 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 	r_no->set_value(NO_D_ID, d_id);
 	r_no->set_value(NO_W_ID, w_id);
 	insert_row(r_no, _wl->t_neworder);
-  if (h_thd->sample_read)
-    h_thd->write_cnt++;
-  if(h_thd->sample_trans)
-    h_thd->access_cnt+=1.0/(1.0/_wl->t_neworder->get_table_size());
+  h_thd->sample_row(WR, _wl->t_neworder->get_table_size());
+  h_thd->mark_row(r_no);
 	for (UInt32 ol_number = 0; ol_number < ol_cnt; ol_number++) {
 
 		uint64_t ol_i_id = query->items[ol_number].ol_i_id;
@@ -404,13 +381,11 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 		row_t * r_item = ((row_t *)item->location);
 
 		row_t * r_item_local = get_row(r_item, RD);
-    if (h_thd->sample_read)
-      h_thd->read_cnt++;
-    if(h_thd->sample_trans)
-      h_thd->access_cnt+=1.0/g_max_items;
+    h_thd->sample_row(RD, g_max_items);
 		if (r_item_local == NULL) {
 			return finish(Abort);
 		}
+    h_thd->mark_row(r_item_local);
 		int64_t i_price;
 		//char * i_name;
 		//char * i_data;
@@ -439,13 +414,11 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 		assert(item != NULL);
 		row_t * r_stock = ((row_t *)stock_item->location);
 		row_t * r_stock_local = get_row(r_stock, WR);
-    if (h_thd->sample_read)
-      h_thd->read_cnt++;
-    if(h_thd->sample_trans)
-      h_thd->access_cnt+=1.0/g_max_items;
+    h_thd->sample_row(RD, g_max_items);
 		if (r_stock_local == NULL) {
 			return finish(Abort);
 		}
+    h_thd->mark_row(r_stock_local);
 
 		// XXX s_dist_xx are not retrieved.
 		UInt64 s_quantity;
@@ -473,10 +446,7 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 			quantity = s_quantity - ol_quantity + 91;
 		}
 		r_stock_local->set_value(S_QUANTITY, &quantity);
-    if (h_thd->sample_read)
-      h_thd->write_cnt++;
-    if(h_thd->sample_trans)
-      h_thd->access_cnt+=1.0/g_max_items;
+    h_thd->sample_row(WR, g_max_items);
 
 		/*====================================================+
 		EXEC SQL INSERT
@@ -504,10 +474,8 @@ RC tpcc_txn_man::run_new_order(tpcc_query * query) {
 		r_ol->set_value(OL_AMOUNT, &ol_amount);
 #endif
 		insert_row(r_ol, _wl->t_orderline);
-    if (h_thd->sample_read)
-      h_thd->write_cnt++;
-    if(h_thd->sample_trans)
-      h_thd->access_cnt+=(1.0/_wl->t_orderline->get_table_size());
+    h_thd->sample_row(RD, _wl->t_orderline->get_table_size());
+    h_thd->mark_row(r_ol);
 	}
 	assert( rc == RCOK );
 	return finish(rc);

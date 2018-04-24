@@ -167,7 +167,7 @@ RC thread_t::run() {
 			if (WORKLOAD == TEST)
 				rc = runTest(m_txn);
 			else
-				rc = m_txn->run_txn(m_query);
+				rc = m_txn->run_txn(this, m_query);
 #endif
       if (sample_trans)
         trans_cnt++;
@@ -276,4 +276,49 @@ RC thread_t::runTest(txn_man * txn)
 	}
 	assert(false);
 	return RCOK;
+}
+
+void thread_t::mark_row(row_t * row) {
+  if (mark_state && !row->mark[_thd_id]) {
+    row->mark[_thd_id] ^= 1;
+    rec_set[mark_cntr] = row;
+    mark_cntr++;
+    mark_cntr %= MAXMARK;
+    if (mark_cntr == 0) {
+      mark_state = false;
+      sample_cntr = 0;
+    }
+  } else if (!mark_state) {
+    if (sample_cntr % RECORDRATE == 0) {
+      for (int i = 0; i < _thd_id; i++) {
+        report_info.cont_cntr += row->mark[i];
+      }
+      for (int i = _thd_id + 1; i < g_thread_cnt; i++) {
+        report_info.cont_cntr += row->mark[i];
+      }
+      report_info.access_cntr += g_thread_cnt;
+      mark_cntr++;
+      mark_cntr %= MAXDETECT;
+      sample_cntr++;
+      if (mark_cntr == 0) {
+        mark_state = true;
+        for (int i = 0; i < MAXMARK; i++) {
+          rec_set[i]->mark[_thd_id] = 0;
+        }
+      }
+    }
+  }
+}
+
+void thread_t::sample_row(access_t type, size_t table_size) {
+  if (sample_read) {
+    if (type == RD || type == SCAN) {
+      report_info.read_cnt++;
+    } else {
+      report_info.write_cnt++;
+    }
+  }
+  if (sample_trans) {
+    report_info.access_cnt+=1.0/table_size;
+  }
 }
