@@ -221,4 +221,6 @@ extern TestCases					g_test_case;
 #define TRANSRATE 500
 #define PARTRATE 500
 #define RECORDRATE 2000
+#define MAXMARK 15
+#define MAXDETECT 20
 #endif

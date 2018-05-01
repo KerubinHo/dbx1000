@@ -61,12 +61,11 @@ RC tpcc_txn_man::run_payment(thread_t * h_thd, tpcc_query * query) {
 	row_t * r_wh_local;
 	if (g_wh_update) {
 		r_wh_local = get_row(r_wh, WR);
-    h_thd->sample_row(WR, NUM_WH);
   }
 	else {
 		r_wh_local = get_row(r_wh, RD);
-    h_thd->sample_row(RD, NUM_WH);
   }
+  h_thd->sample_row(RD, NUM_WH);
 
 	if (r_wh_local == NULL) {
 		return finish(Abort);
@@ -78,10 +77,7 @@ RC tpcc_txn_man::run_payment(thread_t * h_thd, tpcc_query * query) {
 	r_wh_local->get_value(W_YTD, w_ytd);
 	if (g_wh_update) {
 		r_wh_local->set_value(W_YTD, w_ytd + query->h_amount);
-    if (h_thd->sample_read)
-      h_thd->write_cnt++;
-    if(h_thd->sample_trans)
-      h_thd->access_cnt+=(1.0/NUM_WH);
+    h_thd->sample_row(WR, NUM_WH);
 	}
 	char w_name[11];
 	char * tmp_str = r_wh_local->get_value(W_NAME);
@@ -235,24 +231,24 @@ RC tpcc_txn_man::run_payment(thread_t * h_thd, tpcc_query * query) {
 	  history (h_c_d_id, h_c_w_id, h_c_id, h_d_id, h_w_id, h_date, h_amount, h_data)
 	  VALUES (:c_d_id, :c_w_id, :c_id, :d_id, :w_id, :datetime, :h_amount, :h_data);
 	  +=============================================================================*/
-  h_thd->sample_row(WR, _wl->t_history->get_table_size());
+  //h_thd->sample_row(WR, _wl->t_history->get_table_size());
 
 	row_t * r_hist;
 	uint64_t row_id;
-	_wl->t_history->get_new_row(r_hist, 0, row_id);
-	r_hist->set_value(H_C_ID, c_id);
-	r_hist->set_value(H_C_D_ID, c_d_id);
-	r_hist->set_value(H_C_W_ID, c_w_id);
-	r_hist->set_value(H_D_ID, d_id);
-	r_hist->set_value(H_W_ID, w_id);
-	int64_t date = 2013;
-	r_hist->set_value(H_DATE, date);
-	r_hist->set_value(H_AMOUNT, h_amount);
+	//_wl->t_history->get_new_row(r_hist, 0, row_id);
+	//r_hist->set_value(H_C_ID, c_id);
+	//r_hist->set_value(H_C_D_ID, c_d_id);
+	//r_hist->set_value(H_C_W_ID, c_w_id);
+	//r_hist->set_value(H_D_ID, d_id);
+	//r_hist->set_value(H_W_ID, w_id);
+	//int64_t date = 2013;
+	//r_hist->set_value(H_DATE, date);
+	//r_hist->set_value(H_AMOUNT, h_amount);
 #if !TPCC_SMALL
-	r_hist->set_value(H_DATA, h_data);
+	//r_hist->set_value(H_DATA, h_data);
 #endif
-	insert_row(r_hist, _wl->t_history);
-  h_thd->mark_row(r_hist);
+	//insert_row(r_hist, _wl->t_history);
+  //h_thd->mark_row(r_hist);
 
 	assert( rc == RCOK );
 	return finish(rc);

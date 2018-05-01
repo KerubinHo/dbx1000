@@ -23,7 +23,7 @@ public:
 	// to run with pthread.
 	// conversion is done within the function.
 	RC 			run();
-  void thread_t::sample_row(access_t type, size_t table_size);
+  void sample_row(access_t type, size_t table_size);
   void mark_row(row_t * row);
 private:
 	uint64_t 	_host_cid;
@@ -60,7 +60,7 @@ private:
     uint64_t access_cntr;
     uint64_t part_success;
     uint64_t part_attempt;
-  }
+  };
 
 	AbortBufferEntry * _abort_buffer;
 	int _abort_buffer_size;
