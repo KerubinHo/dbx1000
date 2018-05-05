@@ -23,10 +23,10 @@ void thread_t::init(uint64_t thd_id, workload * workload) {
 		_abort_buffer[i].query = NULL;
 	_abort_buffer_empty_slots = _abort_buffer_size;
 	_abort_buffer_enable = (g_params["abort_buffer_enable"] == "true");
-  sample_read = sample_part = sample_trans = false;
-  read_cnt = write_cnt = access_cnt = trans_cnt = 0;
+  sample_read = sample_part = sample_trans = mark_state = in_prog = false;
+  next_lock = mark_cntr = sample_cntr = 0;
   mark_state = true;
-  access_cntr = cont_cntr = 0
+  report_info = {0,0,0,0,0,0,0,0};
 }
 
 uint64_t thread_t::get_thd_id() { return _thd_id; }
@@ -117,15 +117,17 @@ RC thread_t::run() {
 
     if (sample_part) {
       if (!in_prog) {
-        for (int i = 0; i < part_query->part_num; i++) {
-          part_con[part_query->part_to_access[i]] = false;
+        if (part_query != NULL) {
+          for (unsigned int i = 0; i < part_query->part_num; i++) {
+            part_con[part_query->part_to_access[i]] = false;
+          }
         }
         in_prog = true;
         part_query = m_query;
         next_lock = 0;
       }
       while (next_lock < part_query->part_num) {
-        if (ATOM_CAS(&(part_con[part_query->part_to_access[next_lock]]), false, true)) {
+        if (ATOM_CAS(part_con[part_query->part_to_access[next_lock]], false, true)) {
           report_info.part_success++;
           next_lock++;
           in_prog = true;
@@ -170,7 +172,7 @@ RC thread_t::run() {
 				rc = m_txn->run_txn(this, m_query);
 #endif
       if (sample_trans)
-        trans_cnt++;
+        report_info.trans_cnt++;
       sample_read = sample_trans = sample_part = false;
 #if CC_ALG == HSTORE
 			if (WORKLOAD == TEST) {
@@ -290,10 +292,10 @@ void thread_t::mark_row(row_t * row) {
     }
   } else if (!mark_state) {
     if (sample_cntr % RECORDRATE == 0) {
-      for (int i = 0; i < _thd_id; i++) {
+      for (unsigned int i = 0; i < _thd_id; i++) {
         report_info.cont_cntr += row->mark[i];
       }
-      for (int i = _thd_id + 1; i < g_thread_cnt; i++) {
+      for (auto i = _thd_id + 1; i < THREAD_CNT; i++) {
         report_info.cont_cntr += row->mark[i];
       }
       report_info.access_cntr += g_thread_cnt;
@@ -302,7 +304,7 @@ void thread_t::mark_row(row_t * row) {
       sample_cntr++;
       if (mark_cntr == 0) {
         mark_state = true;
-        for (int i = 0; i < MAXMARK; i++) {
+        for (auto i = 0; i < MAXMARK; i++) {
           rec_set[i]->mark[_thd_id] = 0;
         }
       }

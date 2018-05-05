@@ -45,7 +45,7 @@ public:
 	myrand * mrand;
 	uint64_t abort_cnt;
 
-	virtual RC 		run_txn(base_query * m_query) = 0;
+	virtual RC 		run_txn(thread_t * h_thd, base_query * m_query) = 0;
 	uint64_t 		get_thd_id();
 	workload * 		get_wl();
 	void 			set_txn_id(txnid_t txn_id);

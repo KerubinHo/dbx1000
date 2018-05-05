@@ -60,7 +60,7 @@ private:
     uint64_t access_cntr;
     uint64_t part_success;
     uint64_t part_attempt;
-  };
+  } report_info;
 
 	AbortBufferEntry * _abort_buffer;
 	int _abort_buffer_size;

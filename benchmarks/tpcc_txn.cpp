@@ -233,8 +233,8 @@ RC tpcc_txn_man::run_payment(thread_t * h_thd, tpcc_query * query) {
 	  +=============================================================================*/
   //h_thd->sample_row(WR, _wl->t_history->get_table_size());
 
-	row_t * r_hist;
-	uint64_t row_id;
+	//row_t * r_hist;
+	//uint64_t row_id;
 	//_wl->t_history->get_new_row(r_hist, 0, row_id);
 	//r_hist->set_value(H_C_ID, c_id);
 	//r_hist->set_value(H_C_D_ID, c_d_id);
@@ -334,7 +334,7 @@ RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 	EXEC SQL INSERT INTO ORDERS (o_id, o_d_id, o_w_id, o_c_id, o_entry_d, o_ol_cnt, o_all_local)
 		VALUES (:o_id, :d_id, :w_id, :c_id, :datetime, :o_ol_cnt, :o_all_local);
 	+========================================================================================*/
-	row_t * r_order;
+  /*	row_t * r_order;
 	uint64_t row_id;
 	_wl->t_order->get_new_row(r_order, 0, row_id);
 	r_order->set_value(O_ID, o_id);
@@ -347,19 +347,19 @@ RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 	r_order->set_value(O_ALL_LOCAL, all_local);
 	insert_row(r_order, _wl->t_order);
   h_thd->sample_row(WR, _wl->t_order->get_table_size());
-  h_thd->mark_row(r_order);
+  h_thd->mark_row(r_order);*/
 	/*=======================================================+
     EXEC SQL INSERT INTO NEW_ORDER (no_o_id, no_d_id, no_w_id)
         VALUES (:o_id, :d_id, :w_id);
     +=======================================================*/
-	row_t * r_no;
+  /*	row_t * r_no;
 	_wl->t_neworder->get_new_row(r_no, 0, row_id);
 	r_no->set_value(NO_O_ID, o_id);
 	r_no->set_value(NO_D_ID, d_id);
 	r_no->set_value(NO_W_ID, w_id);
 	insert_row(r_no, _wl->t_neworder);
   h_thd->sample_row(WR, _wl->t_neworder->get_table_size());
-  h_thd->mark_row(r_no);
+  h_thd->mark_row(r_no);*/
 	for (UInt32 ol_number = 0; ol_number < ol_cnt; ol_number++) {
 
 		uint64_t ol_i_id = query->items[ol_number].ol_i_id;

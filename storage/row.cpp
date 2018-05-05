@@ -31,6 +31,7 @@ void
 row_t::init(int size)
 {
 	data = (char *) _mm_malloc(size, 64);
+  mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
 }
 
 RC

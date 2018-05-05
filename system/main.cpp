@@ -17,7 +17,7 @@ thread_t ** m_thds;
 // defined in parser.cpp
 void parser(int argc, char * argv[]);
 
-unsigned char part_con[g_thread_cnt] = {};
+unsigned char part_con[THREAD_CNT] = {};
 
 int main(int argc, char* argv[])
 {
@@ -106,7 +106,7 @@ int main(int argc, char* argv[])
 	} else {
 		((TestWorkload *)m_wl)->summarize();
 	}
-	return 0
+	return 0;
 }
 
 void * f(void * id) {
