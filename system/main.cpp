@@ -127,7 +127,7 @@ void check() {
   double thp = 0;
   double home = 0;
   double tot_count = 0;
-  while (count < g_thread_cnt) {
+  while (count == 0) {
     sleep(5);
     long double part_attempt = 0;
     long double part_success = 0;
@@ -143,7 +143,6 @@ void check() {
     long double run_time = 0;
     count = 0;
     for (uint64_t i = 0; i < g_thread_cnt; i++) {
-      if (!m_thds[i]->_wl->sim_done) {
         part_attempt += m_thds[i]->report_info.part_attempt;
         part_success += m_thds[i]->report_info.part_success;
         read_cnt += m_thds[i]->report_info.read_cnt;
@@ -156,11 +155,12 @@ void check() {
         home_cont += m_thds[i]->report_info.home_cont;
         txn_cnt += stats._stats[i]->txn_cnt;
         run_time += stats._stats[i]->run_time;
+        if (!m_thds[i]->_wl->sim_done) {
       } else {
         count++;
       }
     }
-    if (count == 0) {
+    //if (count == 0) {
       rr += (read_cnt) / (read_cnt + write_cnt);
       tl += access_cnt / trans_cnt;
       pc += part_attempt / part_success;
@@ -168,7 +168,7 @@ void check() {
       home += home_cont / home_access;
       thp += txn_cnt / 5;
       tot_count++;
-    }
+      //}
   }
   pc /= tot_count;
   tl /= tot_count;
