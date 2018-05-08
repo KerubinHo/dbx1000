@@ -312,6 +312,39 @@ void thread_t::mark_row(row_t * row) {
   }
 }
 
+
+void thread_t::mark_row(row_t * row, int part_id) {
+  if (home_mark_state && !row->home_mark[_thd_id] && part_id == _thd_id % g_virtual_part_cnt) {
+    row->home_mark[_thd_id] ^= 1;
+    home_rec_set[mark_cntr] = row;
+    home_mark_cntr++;
+    home_mark_cntr %= MAXMARK;
+    if (home_mark_cntr == 0) {
+      home_mark_state = false;
+      home_sample_cntr = 0;
+    }
+  } else if (!home_mark_state) {
+    if (home_sample_cntr % RECORDRATE == 0) {
+      for (unsigned int i = 0; i < _thd_id; i++) {
+        report_info.home_cont += row->home_mark[i];
+      }
+      for (auto i = _thd_id + 1; i < THREAD_CNT; i++) {
+        report_info.home_cont += row->home_mark[i];
+      }
+      report_info.home_access += g_thread_cnt;
+      home_mark_cntr++;
+      home_mark_cntr %= MAXDETECT;
+      home_sample_cntr++;
+      if (home_mark_cntr == 0) {
+        home_mark_state = true;
+        for (auto i = 0; i < MAXMARK; i++) {
+          home_rec_set[i]->home_mark[_thd_id] = 0;
+        }
+      }
+    }
+  }
+}
+
 void thread_t::sample_row(access_t type, size_t table_size) {
   if (sample_read) {
     if (type == RD || type == SCAN) {

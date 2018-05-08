@@ -56,6 +56,7 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 				goto final;
 			}
       h_thd->mark_row(row_local);
+      h_thd->home_mark_row(row_local, part_id);
 
 			// Computation //
 			// Only do computation when there are more than 1 requests.

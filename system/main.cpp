@@ -125,6 +125,7 @@ void check() {
   double rr = 0;
   double cr = 0;
   double thp = 0;
+  double home = 0;
   double tot_count = 0;
   while (count < g_thread_cnt) {
     sleep(5);
@@ -136,6 +137,8 @@ void check() {
     long double trans_cnt = 0;
     long double cont_cntr = 0;
     long double access_cntr = 0;
+    long double home_access = 0;
+    long double home_cont = 0;
     long double txn_cnt = 0;
     long double run_time = 0;
     count = 0;
@@ -149,6 +152,8 @@ void check() {
         trans_cnt += m_thds[i]->report_info.trans_cnt;
         access_cntr += m_thds[i]->report_info.access_cntr;
         cont_cntr += m_thds[i]->report_info.cont_cntr;
+        home_access += m_thds[i]->report_info.home_access;
+        home_cont += m_thds[i]->report_info.home_cont;
         txn_cnt += stats._stats[i]->txn_cnt;
         run_time += stats._stats[i]->run_time;
       } else {
@@ -160,6 +165,7 @@ void check() {
       tl += access_cnt / trans_cnt;
       pc += part_attempt / part_success;
       cr += cont_cntr / access_cntr;
+      home += home_cont / home_access;
       thp += txn_cnt / 5;
       tot_count++;
     }
@@ -169,8 +175,9 @@ void check() {
   rr /= tot_count;
   cr /= tot_count;
   thp /= tot_count;
+  home /= tot_count;
   FILE * outf = fopen("pcc-train.out", "a");
-  fprintf(outf, "\t%.4lf\t0\t%.4lf\t0\t%.4lf\t0\t%.4lf", pc, tl, rr, cr);
+  fprintf(outf, "\t%.4lf\t0\t%.4lf\t0\t%.4lf\t%.4lf\t%.4lf", pc, tl, rr, home, cr);
   FILE * temp = fopen("temp.out", "w");
   fprintf(temp, "%f", thp);
 }

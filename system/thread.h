@@ -24,6 +24,8 @@ public:
     long double access_cnt;
     uint64_t trans_cnt;
     uint64_t cont_cntr;
+    uint64_t home_cont;
+    uint64_t home_access;
     uint64_t access_cntr;
     uint64_t part_success;
     uint64_t part_attempt;
@@ -36,6 +38,7 @@ public:
 	RC 			run();
   void sample_row(access_t type, size_t table_size);
   void mark_row(row_t * row);
+  void home_mark_row(row_t * row, int part_id);
 private:
 	uint64_t 	_host_cid;
 	uint64_t 	_cur_cid;
@@ -56,10 +59,14 @@ private:
   bool sample_trans;
   uint64_t next_lock;
 
+  bool home_mark_state;
+  bool home_mark_cntr;
+  bool home_sample_cntr;
   bool mark_state;
   bool in_prog;
   base_query * part_query;
   row_t * rec_set[MAXMARK];
+  row_t * home_rec_set[MAXMARK];
   uint64_t mark_cntr;
   uint64_t sample_cntr;
 

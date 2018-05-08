@@ -24,6 +24,7 @@ row_t::init(table_t * host_table, uint64_t part_id, uint64_t row_id) {
 	int tuple_size = schema->get_tuple_size();
 	data = (char *) _mm_malloc(sizeof(char) * tuple_size, 64);
   mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
+  home_mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
   memset(mark, 0, g_thread_cnt * sizeof(bool));
 	return RCOK;
 }
