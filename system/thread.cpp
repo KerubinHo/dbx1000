@@ -313,7 +313,7 @@ void thread_t::mark_row(row_t * row) {
 }
 
 
-void thread_t::mark_row(row_t * row, int part_id) {
+void thread_t::home_mark_row(row_t * row, int part_id) {
   if (home_mark_state && !row->home_mark[_thd_id] && part_id == _thd_id % g_virtual_part_cnt) {
     row->home_mark[_thd_id] ^= 1;
     home_rec_set[mark_cntr] = row;
