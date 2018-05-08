@@ -141,6 +141,7 @@ void check() {
     long double home_cont = 0;
     long double txn_cnt = 0;
     long double run_time = 0;
+    long double last_time = 0;
     count = 0;
     for (uint64_t i = 0; i < g_thread_cnt; i++) {
         part_attempt += m_thds[i]->report_info.part_attempt;
@@ -160,14 +161,16 @@ void check() {
         count++;
       }
     }
+    run_time /= (g_thread_cnt - count);
     //if (count == 0) {
       rr += (read_cnt) / (read_cnt + write_cnt);
       tl += access_cnt / trans_cnt;
       pc += part_attempt / part_success;
       cr += cont_cntr / access_cntr;
       home += home_cont / home_access;
-      thp += txn_cnt / 5;
+      thp += txn_cnt / (run_time - last_time);
       tot_count++;
+      last_time = run_time;
       //}
   }
   pc /= tot_count;
