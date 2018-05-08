@@ -128,6 +128,7 @@ void check() {
   double home = 0;
   double tot_count = 0;
   while (count == 0) {
+    ts_t starttime = get_sys_clock();
     sleep(5);
     long double part_attempt = 0;
     long double part_success = 0;
@@ -155,20 +156,22 @@ void check() {
         home_access += m_thds[i]->report_info.home_access;
         home_cont += m_thds[i]->report_info.home_cont;
         txn_cnt += stats._stats[i]->txn_cnt;
-        run_time += stats._stats[i]->run_time;
+        //run_time += stats._stats[i]->run_time;
         if (!m_thds[i]->_wl->sim_done) {
       } else {
         count++;
       }
     }
-    run_time /= (g_thread_cnt - count);
+    ts_t endtime = get_sys_clock();
+		uint64_t timespan = endtime - starttime;
+    //run_time /= (g_thread_cnt - count);
     //if (count == 0) {
       rr += (read_cnt) / (read_cnt + write_cnt);
       tl += access_cnt / trans_cnt;
       pc += part_attempt / part_success;
       cr += cont_cntr / access_cntr;
       home += home_cont / home_access;
-      thp += txn_cnt / ((run_time - last_time) / BILLION);
+      thp += txn_cnt / ((timespan) / BILLION);
       tot_count++;
       last_time = run_time;
       //}
