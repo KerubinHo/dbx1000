@@ -50,7 +50,7 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 			access_t type = req->rtype;
 
 			row_local = get_row(row, type);
-      h_thd->sample_row(type, SYNTH_TABLE_SIZE);
+      h_thd->sample_row(type, 1);
 			if (row_local == NULL) {
 				rc = Abort;
 				goto final;

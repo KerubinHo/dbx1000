@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 
 
 	uint64_t thd_cnt = g_thread_cnt;
-	pthread_t p_thds[thd_cnt - 1];
+	pthread_t p_thds[thd_cnt/* - 1*/];
 	m_thds = new thread_t * [thd_cnt];
 	for (uint32_t i = 0; i < thd_cnt; i++)
 		m_thds[i] = (thread_t *) _mm_malloc(sizeof(thread_t), 64);
@@ -90,11 +90,12 @@ int main(int argc, char* argv[])
 
 	// spawn and run txns again.
 	int64_t starttime = get_server_clock();
-	for (uint32_t i = 0; i < thd_cnt - 1; i++) {
+	for (uint32_t i = 0; i < thd_cnt /* - 1*/; i++) {
 		uint64_t vid = i;
 		pthread_create(&p_thds[i], NULL, f, (void *)vid);
 	}
-	f((void *)(thd_cnt - 1));
+	// f((void *)(thd_cnt - 1));
+  check();
 	for (uint32_t i = 0; i < thd_cnt - 1; i++)
 		pthread_join(p_thds[i], NULL);
 	int64_t endtime = get_server_clock();
@@ -113,4 +114,56 @@ void * f(void * id) {
 	uint64_t tid = (uint64_t)id;
 	m_thds[tid]->run();
 	return NULL;
+}
+
+void check() {
+  int count = 0;;
+  double pc = 0;
+  double tl = 0;;
+  double rr = 0;
+  double cr = 0;
+  doublt tp = 0;
+  int tot_count = 0;
+  while (count < thd_cnt) {
+    sleep(5);
+    long double part_attempt = 0;
+    long double part_success = 0;
+    long double read_cnt = 0;
+    long double write_cnt = 0;
+    long double access_cnt = 0;
+    long double trans_cnt = 0;
+    long double cont_cntr = 0;
+    long double access_cntr = 0;
+    long double txn_cnt = 0;
+    long double run_time = 0;
+    count = 0;
+    for (int i = 0; i < thd_cnt; i++) {
+      if (!m_thds[i]->_wl->sim_done) {
+        part_attempt += m_thds[i]->report_info.part_attempt;
+        part_success += m_thds[i]->report_info.part_success;
+        read_cnt += m_thds[i]->report_info.read_cnt;
+        write_cnt += m_thds[i]->report_info.write_cnt;
+        access_cnt += m_thds[i]->report_info.access_cnt;
+        trans_cnt += m_thds[i]->report_info.trans_cnt;
+        access_cntr += m_thds[i]->report_info.access_cntr;
+        cont_cntr += m_thds[i]->report_info.cont_cntr;
+        txn_cnt += stats[i]->txn_cnt;
+        run_time += stats[i]->run_time;
+      } else {
+        count++;
+      }
+    }
+    if (count == 0) {
+      rr += (read_cnt) / (read_cnt + write_cnt);
+      tl += access_cnt / trans_cnt;
+      pc += part_attempt / part_success;
+      cr += cont_cntr / access_cntr;
+      tp += txn_cnt / run_time;
+      tot_count++;
+    }
+  }
+  FILE * outf = fopen("pcc-train.out", "a");
+  fprintf(outf, "\t%.4f" "\t0" "\t%.4f" "\t0" "\t%.4f" "\t%.4f" "\t%.4f" "\t%.4f\n", pc/tot_count, tl/tot_count, rr/tot_count, 0, cr/tot_count, tp/tot_count);
+  FILE * temp = fopen("temp.out", "w");
+  fprintf(temp, "%f", tp/tot_count);
 }
