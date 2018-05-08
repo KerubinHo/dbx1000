@@ -168,7 +168,7 @@ void check() {
       pc += part_attempt / part_success;
       cr += cont_cntr / access_cntr;
       home += home_cont / home_access;
-      thp += txn_cnt / (run_time - last_time);
+      thp += txn_cnt / ((run_time - last_time) / BILLION);
       tot_count++;
       last_time = run_time;
       //}
