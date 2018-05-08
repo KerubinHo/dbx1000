@@ -38,7 +38,7 @@ public:
 	RC 			run();
   void sample_row(access_t type, size_t table_size);
   void mark_row(row_t * row);
-  void home_mark_row(row_t * row, int part_id);
+  void home_mark_row(row_t * row, uint64_t part_id);
 private:
 	uint64_t 	_host_cid;
 	uint64_t 	_cur_cid;
