@@ -173,7 +173,7 @@ void check() {
       home += home_cont / home_access;
       thp += txn_cnt / ((timespan) / BILLION);
       tot_count++;
-      last_time = run_time;
+      //last_time = run_time;
       //}
   }
   pc /= tot_count;
