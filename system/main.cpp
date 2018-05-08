@@ -141,7 +141,7 @@ void check() {
     long double home_access = 0;
     long double home_cont = 0;
     long double txn_cnt = 0;
-    long double run_time = 0;
+    //long double run_time = 0;
     //long double last_time = 0;
     count = 0;
     for (uint64_t i = 0; i < g_thread_cnt; i++) {
