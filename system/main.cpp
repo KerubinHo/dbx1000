@@ -11,8 +11,10 @@
 #include "vll.h"
 
 void * f(void *);
-
+#define BILLION 1000000000UL
 thread_t ** m_thds;
+
+void check();
 
 // defined in parser.cpp
 void parser(int argc, char * argv[]);
@@ -117,14 +119,14 @@ void * f(void * id) {
 }
 
 void check() {
-  int count = 0;;
+  uint64_t count = 0;;
   double pc = 0;
   double tl = 0;;
   double rr = 0;
   double cr = 0;
-  doublt tp = 0;
-  int tot_count = 0;
-  while (count < thd_cnt) {
+  double thp = 0;
+  double tot_count = 0;
+  while (count < g_thread_cnt) {
     sleep(5);
     long double part_attempt = 0;
     long double part_success = 0;
@@ -137,7 +139,7 @@ void check() {
     long double txn_cnt = 0;
     long double run_time = 0;
     count = 0;
-    for (int i = 0; i < thd_cnt; i++) {
+    for (uint64_t i = 0; i < g_thread_cnt; i++) {
       if (!m_thds[i]->_wl->sim_done) {
         part_attempt += m_thds[i]->report_info.part_attempt;
         part_success += m_thds[i]->report_info.part_success;
@@ -147,8 +149,8 @@ void check() {
         trans_cnt += m_thds[i]->report_info.trans_cnt;
         access_cntr += m_thds[i]->report_info.access_cntr;
         cont_cntr += m_thds[i]->report_info.cont_cntr;
-        txn_cnt += stats[i]->txn_cnt;
-        run_time += stats[i]->run_time;
+        txn_cnt += stats._stats[i]->txn_cnt;
+        run_time += stats._stats[i]->run_time;
       } else {
         count++;
       }
@@ -158,12 +160,17 @@ void check() {
       tl += access_cnt / trans_cnt;
       pc += part_attempt / part_success;
       cr += cont_cntr / access_cntr;
-      tp += txn_cnt / run_time;
+      thp += txn_cnt / 5;
       tot_count++;
     }
   }
+  pc /= tot_count;
+  tl /= tot_count;
+  rr /= tot_count;
+  cr /= tot_count;
+  thp /= tot_count;
   FILE * outf = fopen("pcc-train.out", "a");
-  fprintf(outf, "\t%.4f" "\t0" "\t%.4f" "\t0" "\t%.4f" "\t%.4f" "\t%.4f" "\t%.4f\n", pc/tot_count, tl/tot_count, rr/tot_count, 0, cr/tot_count, tp/tot_count);
+  fprintf(outf, "\t%.4lf\t0\t%.4lf\t0\t%.4lf\t0\t%.4lf", pc, tl, rr, cr);
   FILE * temp = fopen("temp.out", "w");
-  fprintf(temp, "%f", tp/tot_count);
+  fprintf(temp, "%f", thp);
 }

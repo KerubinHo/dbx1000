@@ -18,6 +18,17 @@ public:
 	uint64_t 	get_cur_cid();
 	void 		set_cur_cid(uint64_t cid);
 
+  struct report_info {
+    uint64_t read_cnt;
+    uint64_t write_cnt;
+    long double access_cnt;
+    uint64_t trans_cnt;
+    uint64_t cont_cntr;
+    uint64_t access_cntr;
+    uint64_t part_success;
+    uint64_t part_attempt;
+  } report_info;
+
 	void 		init(uint64_t thd_id, workload * workload);
 	// the following function must be in the form void* (*)(void*)
 	// to run with pthread.
@@ -51,16 +62,6 @@ private:
   row_t * rec_set[MAXMARK];
   uint64_t mark_cntr;
   uint64_t sample_cntr;
-  struct report_info {
-    uint64_t read_cnt;
-    uint64_t write_cnt;
-    long double access_cnt;
-    uint64_t trans_cnt;
-    uint64_t cont_cntr;
-    uint64_t access_cntr;
-    uint64_t part_success;
-    uint64_t part_attempt;
-  } report_info;
 
 	AbortBufferEntry * _abort_buffer;
 	int _abort_buffer_size;
