@@ -39,7 +39,7 @@
 /***********************************************/
 // WAIT_DIE, NO_WAIT, DL_DETECT, TIMESTAMP, MVCC, HEKATON, HSTORE, OCC, VLL, TICTOC, SILO
 // TODO TIMESTAMP does not work at this moment
-#define CC_ALG 						VLL
+#define CC_ALG 						HSTORE
 #define ISOLATION_LEVEL 			SERIALIZABLE
 
 // all transactions acquire tuples according to the primary key order.
@@ -109,21 +109,21 @@
 // max number of rows touched per transaction
 #define MAX_ROW_PER_TXN				64
 #define QUERY_INTVL 				1UL
-#define MAX_TXN_PER_PART 			500000
+#define MAX_TXN_PER_PART 			100 /** 1000*/
 #define FIRST_PART_LOCAL 			true
 #define MAX_TUPLE_SIZE				1024 // in bytes
 // ==== [YCSB] ====
 #define INIT_PARALLELISM			23
-#define SYNTH_TABLE_SIZE 			(1024 * 1024 * 10)
+#define SYNTH_TABLE_SIZE 			(/*1024 * 1024 **/100*  23)
 #define ZIPF_THETA 					0.6
 #define READ_PERC 					0.9
 #define WRITE_PERC 					0.1
 #define SCAN_PERC 					0
 #define SCAN_LEN					20
-#define PART_PER_TXN 				1
+#define PART_PER_TXN 				2
 #define PERC_MULTI_PART				0
-#define REQ_PER_QUERY				16
-#define FIELD_PER_TUPLE				10
+#define REQ_PER_QUERY				10
+#define FIELD_PER_TUPLE				25
 // ==== [TPCC] ====
 // For large warehouse count, the tables do not fit in memory
 // small tpcc schemas shrink the table size.

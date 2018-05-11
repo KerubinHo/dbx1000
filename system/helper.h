@@ -211,17 +211,17 @@ private:
 
 inline void set_affinity(uint64_t thd_id) {
 	return;
-	/*
+
 	// TOOD. the following mapping only works for swarm
 	// which has 4-socket, 10 physical core per socket,
 	// 80 threads in total with hyper-threading
-	uint64_t a = thd_id % 40;
-	uint64_t processor_id = a / 10 + (a % 10) * 4;
-	processor_id += (thd_id / 40) * 40;
+	uint64_t a = thd_id % 24;
+	uint64_t processor_id = a / 12 + (a % 12) * 2;
+	processor_id += (thd_id / 24) * 24;
 
 	cpu_set_t  mask;
 	CPU_ZERO(&mask);
 	CPU_SET(processor_id, &mask);
 	sched_setaffinity(0, sizeof(cpu_set_t), &mask);
-	*/
+
 }

@@ -26,18 +26,22 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 	ycsb_query * m_query = (ycsb_query *) query;
 	ycsb_wl * wl = (ycsb_wl *) h_wl;
 	itemid_t * m_item = NULL;
-  	row_cnt = 0;
-
+  row_cnt = 0;
+  if (h_thd->sample_trans) {
+    h_thd->report_info.access_cnt+=m_query->request_cnt;
+    h_thd->report_info.trans_cnt+=1;
+  }
 	for (uint32_t rid = 0; rid < m_query->request_cnt; rid ++) {
 		ycsb_request * req = &m_query->requests[rid];
 		int part_id = wl->key_to_part( req->key );
 
+    printf("%lu ", req->key);
 		bool finish_req = false;
 		UInt32 iteration = 0;
 		while ( !finish_req ) {
-			if (iteration == 0) {
+			//if (iteration == 0) {
 				m_item = index_read(_wl->the_index, req->key, part_id);
-			}
+        //}
 #if INDEX_STRUCT == IDX_BTREE
 			else {
 				_wl->the_index->index_next(get_thd_id(), m_item);

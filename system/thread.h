@@ -39,6 +39,7 @@ public:
   void sample_row(access_t type, size_t table_size);
   void mark_row(row_t * row);
   void home_mark_row(row_t * row, uint64_t part_id);
+  bool sample_trans;
 private:
 	uint64_t 	_host_cid;
 	uint64_t 	_cur_cid;
@@ -56,7 +57,6 @@ private:
 
   bool sample_read;
   bool sample_part;
-  bool sample_trans;
   uint64_t next_lock;
 
   bool home_mark_state;
