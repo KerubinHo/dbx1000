@@ -19,7 +19,7 @@ void check();
 // defined in parser.cpp
 void parser(int argc, char * argv[]);
 
-unsigned char part_con[THREAD_CNT] = {};
+bool volatile part_con[THREAD_CNT] = {};
 
 int main(int argc, char* argv[])
 {
@@ -96,8 +96,8 @@ int main(int argc, char* argv[])
 		uint64_t vid = i;
 		pthread_create(&p_thds[i], NULL, f, (void *)vid);
 	}
-	// f((void *)(thd_cnt - 1));
-  check();
+  //f((void *)(thd_cnt - 1));
+   check();
 	for (uint32_t i = 0; i < thd_cnt /*- 1*/; i++)
 		pthread_join(p_thds[i], NULL);
 	int64_t endtime = get_server_clock();
@@ -127,21 +127,22 @@ void check() {
   double thp = 0;
   double home = 0;
   double tot_count = 0;
-  //long double last_part_attempt = 0;
-  //long double last_part_success = 0;
+  long double last_part_attempt = 0;
+  long double last_part_success = 0;
   long double last_read_cnt = 0;
   long double last_write_cnt = 0;
   long double last_access_cnt = 0;
   long double last_trans_cnt = 0;
-  //long double last_cont_cntr = 0;
-  //long double last_access_cntr = 0;
-  //long double last_home_access = 0;
-  //long double last_home_cont = 0;
+  long double last_cont_cntr = 0;
+  long double last_access_cntr = 0;
+  long double last_home_access = 0;
+  long double last_home_cont = 0;
   long double last_txn_cnt = 0;
   long double last_run_time = 0;
   while (count == 0) {
     //ts_t starttime = get_sys_clock();
     sleep(1);
+    printf("ADAWEW\n");
     long double part_attempt = 0;
     long double part_success = 0;
     long double read_cnt = 0;
@@ -167,7 +168,6 @@ void check() {
         trans_cnt += m_thds[i]->report_info.trans_cnt;
         access_cntr += m_thds[i]->report_info.access_cntr;
         cont_cntr += m_thds[i]->report_info.cont_cntr;
-        printf("%Lf, %Lf, %Lf, %Lf\n", cont_cntr, access_cntr, home_cont, home_access);
         home_access += m_thds[i]->report_info.home_access;
         home_cont += m_thds[i]->report_info.home_cont;
         txn_cnt += stats._stats[i]->txn_cnt;
@@ -181,22 +181,22 @@ void check() {
     if (count == 0) {
       rr += (read_cnt-last_read_cnt) / (read_cnt - last_read_cnt + write_cnt - last_write_cnt);
       tl += (access_cnt - last_access_cnt) / (trans_cnt - last_trans_cnt);
-      pc += part_attempt / part_success;
-      cr += cont_cntr / access_cntr;
-      home += home_cont / home_access;
+      pc += (part_attempt - last_part_attempt) / (part_success - last_part_success);
+      cr += (cont_cntr - last_cont_cntr) / (access_cntr - last_access_cntr) * 100;
+      home += (home_cont - last_home_cont) / (home_access - last_home_access) * 100;
       thp += (txn_cnt - last_txn_cnt) * g_thread_cnt / ((run_time - last_run_time) / BILLION);
       tot_count++;
     }
-    //last_part_attempt = part_attempt;
-    //last_part_success = part_success;
+    last_part_attempt = part_attempt;
+    last_part_success = part_success;
     last_read_cnt = read_cnt;
     last_write_cnt = write_cnt;
     last_access_cnt = access_cnt;
     last_trans_cnt = trans_cnt;
-    //last_cont_cntr = cont_cntr;
-    //last_access_cntr = access_cntr;
-    //last_home_access = home_access;
-    //last_home_cont = home_cont;
+    last_cont_cntr = cont_cntr;
+    last_access_cntr = access_cntr;
+    last_home_access = home_access;
+    last_home_cont = home_cont;
     last_txn_cnt = txn_cnt;
     last_run_time = run_time;
   }

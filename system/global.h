@@ -86,7 +86,7 @@ extern ts_t g_timeout;
 extern ts_t g_dl_loop_detect;
 extern bool g_ts_batch_alloc;
 extern UInt32 g_ts_batch_num;
-extern unsigned char part_con[];
+extern bool volatile part_con[];
 extern map<string, string> g_params;
 
 // YCSB

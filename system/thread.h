@@ -60,8 +60,10 @@ private:
   uint64_t next_lock;
 
   bool home_mark_state;
-  bool home_mark_cntr;
-  bool home_sample_cntr;
+  uint64_t home_mark_cntr;
+  uint64_t home_sample_cntr;
+  uint64_t part_num;
+  uint64_t * part_to_access;
   bool mark_state;
   bool in_prog;
   base_query * part_query;

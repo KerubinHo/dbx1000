@@ -35,7 +35,7 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 		ycsb_request * req = &m_query->requests[rid];
 		int part_id = wl->key_to_part( req->key );
 
-    printf("%lu ", req->key);
+    //printf("%lu ", req->key);
 		bool finish_req = false;
 		UInt32 iteration = 0;
 		while ( !finish_req ) {
@@ -60,7 +60,7 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 				goto final;
 			}
       h_thd->mark_row(row_local);
-      h_thd->home_mark_row(row_local, part_id);
+      h_thd->home_mark_row(row_local, req->key % g_virtual_part_cnt);
 
 			// Computation //
 			// Only do computation when there are more than 1 requests.

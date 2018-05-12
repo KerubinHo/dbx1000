@@ -23,11 +23,13 @@ void thread_t::init(uint64_t thd_id, workload * workload) {
 		_abort_buffer[i].query = NULL;
 	_abort_buffer_empty_slots = _abort_buffer_size;
 	_abort_buffer_enable = (g_params["abort_buffer_enable"] == "true");
-  sample_read = sample_part = sample_trans = mark_state = in_prog = false;
-  next_lock = mark_cntr = sample_cntr = 0;
-  mark_state = true;
-  part_query = NULL;
-  report_info = {0,0,0,0,0,0,0,0};
+  sample_read = sample_part = sample_trans = in_prog = false;
+  mark_cntr = sample_cntr = home_mark_cntr = home_sample_cntr = 0;
+  next_lock = part_num = 0;
+  home_mark_state = mark_state = true;
+  part_to_access = (uint64_t *)
+                   mem_allocator.alloc(sizeof(uint64_t) * g_part_per_txn, thd_id);
+  report_info = {0,0,0,0,0,0,0,0,0,0};
 }
 
 uint64_t thread_t::get_thd_id() { return _thd_id; }
@@ -113,34 +115,44 @@ RC thread_t::run() {
       sample_read = true;
     if (thd_txn_id % TRANSRATE == 0)
       sample_trans = true;
-    if (thd_txn_id % PARTRATE == 0)
+    if (thd_txn_id % PARTRATE == 0) {
       sample_part = true;
+    }
 
     if (sample_part) {
       if (!in_prog) {
-        if (part_query != NULL) {
-          for (unsigned int i = 0; i < part_query->part_num; i++) {
+        if (part_num != 0) {
+          for (unsigned int i = part_num - 1; i != static_cast<unsigned>(-1); i--) {
             part_con[part_query->part_to_access[i]] = false;
           }
         }
         in_prog = true;
-        part_query = m_query;
+        memcpy(part_to_access, m_query->part_to_access, m_query->part_num * sizeof(uint64_t));
+        part_num = m_query->part_num;
+        for (int i = part_num - 1; i > 0; i--)
+          for (int j = 0; j < i; j ++)
+            if (part_to_access[j] > part_to_access[j + 1]) {
+              uint64_t tmp = part_to_access[j];
+              part_to_access[j] = part_to_access[j + 1];
+              part_to_access[j + 1] = tmp;
+            }
         next_lock = 0;
       }
-      while (next_lock < part_query->part_num) {
-        if (ATOM_CAS(part_con[part_query->part_to_access[next_lock]], false, true)) {
+      while (next_lock < part_num) {
+        //printf("%d\n", part_con[part_query->part_to_access[next_lock]]);
+        if (ATOM_CAS(part_con[part_to_access[next_lock]], false, true)) {
           report_info.part_success++;
           next_lock++;
         }
         else {
           report_info.part_attempt++;
-          goto done;
+          break;
         }
       }
-      in_prog = false;
+      if (next_lock >= part_query->part_num)
+        in_prog = false;
     }
 
- done:
 		if ((CC_ALG == HSTORE && !HSTORE_LOCAL_TS)
 				|| CC_ALG == MVCC
 				|| CC_ALG == HEKATON
@@ -285,6 +297,7 @@ void thread_t::mark_row(row_t * row) {
     rec_set[mark_cntr] = row;
     mark_cntr++;
     mark_cntr %= MAXMARK;
+    //printf("%lu ", mark_cntr);
     if (mark_cntr == 0) {
       mark_state = false;
       sample_cntr = 0;
@@ -294,10 +307,10 @@ void thread_t::mark_row(row_t * row) {
       for (unsigned int i = 0; i < _thd_id; i++) {
         report_info.cont_cntr += row->mark[i];
       }
-      for (auto i = _thd_id + 1; i < THREAD_CNT; i++) {
+      for (auto i = _thd_id + 1; i < g_thread_cnt; i++) {
         report_info.cont_cntr += row->mark[i];
       }
-      report_info.access_cntr += g_thread_cnt;
+      report_info.access_cntr++;
       mark_cntr++;
       mark_cntr %= MAXDETECT;
       if (mark_cntr == 0) {
@@ -312,9 +325,9 @@ void thread_t::mark_row(row_t * row) {
 
 
 void thread_t::home_mark_row(row_t * row, uint64_t part_id) {
-  if (home_mark_state && !row->home_mark[_thd_id] && part_id == _thd_id % g_virtual_part_cnt) {
+  if (home_mark_state && !row->home_mark[_thd_id]) {
     row->home_mark[_thd_id] = 1;
-    home_rec_set[mark_cntr] = row;
+    home_rec_set[home_mark_cntr] = row;
     home_mark_cntr++;
     home_mark_cntr %= MAXMARK;
     if (home_mark_cntr == 0) {
@@ -326,10 +339,10 @@ void thread_t::home_mark_row(row_t * row, uint64_t part_id) {
       for (unsigned int i = 0; i < _thd_id; i++) {
         report_info.home_cont += row->home_mark[i];
       }
-      for (auto i = _thd_id + 1; i < THREAD_CNT; i++) {
+      for (auto i = _thd_id + 1; i < g_thread_cnt; i++) {
         report_info.home_cont += row->home_mark[i];
       }
-      report_info.home_access += g_thread_cnt;
+      report_info.home_access ++;
       home_mark_cntr++;
       home_mark_cntr %= MAXDETECT;
       if (home_mark_cntr == 0) {
