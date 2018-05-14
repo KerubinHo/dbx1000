@@ -14,9 +14,9 @@ CPPS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp))
 OBJS = $(CPPS:.cpp=.o)
 DEPS = $(CPPS:.cpp=.d)
 
-all:rundb
+all:silo
 
-rundb : $(OBJS)
+silo : $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 -include $(OBJS:%.o=%.d)
@@ -29,4 +29,4 @@ rundb : $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f rundb $(OBJS) $(DEPS)
+	rm -f silo $(OBJS) $(DEPS)

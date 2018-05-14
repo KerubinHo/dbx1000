@@ -23,12 +23,11 @@ void thread_t::init(uint64_t thd_id, workload * workload) {
 		_abort_buffer[i].query = NULL;
 	_abort_buffer_empty_slots = _abort_buffer_size;
 	_abort_buffer_enable = (g_params["abort_buffer_enable"] == "true");
-  sample_read = sample_part = sample_trans = in_prog = false;
+  sample_read = sample_part = sample_trans = in_prog = sample_conf = false;
   mark_cntr = sample_cntr = home_mark_cntr = home_sample_cntr = 0;
-  next_lock = part_num = 0;
-  home_mark_state = mark_state = true;
-  part_to_access = (uint64_t *)
-                   mem_allocator.alloc(sizeof(uint64_t) * g_part_per_txn, thd_id);
+  part_num = 0;
+  next_lock = -1;
+  home_mark_state = mark_state /*= part_state*/ = true;
   report_info = {0,0,0,0,0,0,0,0,0,0};
 }
 
@@ -62,8 +61,10 @@ RC thread_t::run() {
 	base_query * m_query = NULL;
 	uint64_t thd_txn_id = 0;
 	UInt64 txn_cnt = 0;
+  uint64_t count = 1;
 
 	while (true) {
+    sample_conf = false;
 		ts_t starttime = get_sys_clock();
 		if (WORKLOAD != TEST) {
 			int trial = 0;
@@ -91,6 +92,15 @@ RC thread_t::run() {
 					}
 					else if (m_query == NULL) {
 						m_query = query_queue->get_next_query( _thd_id );
+            if (count % READRATE == 0)
+              sample_read = true;
+            if (count % TRANSRATE == 0)
+              sample_trans = true;
+            if (count % PARTRATE == 0) {
+              sample_part = true;
+            }
+            sample_conf = true;
+            count++;
 					#if CC_ALG == WAIT_DIE
 						m_txn->set_ts(get_next_ts());
 					#endif
@@ -99,8 +109,18 @@ RC thread_t::run() {
 						break;
 				}
 			} else {
-				if (rc == RCOK)
+				if (rc == RCOK) {
 					m_query = query_queue->get_next_query( _thd_id );
+          if (count % READRATE == 0)
+            sample_read = true;
+          if (count % TRANSRATE == 0)
+            sample_trans = true;
+          if (count % PARTRATE == 0) {
+            sample_part = true;
+          }
+          sample_conf = true;
+          count++;
+        }
 			}
 		}
 		INC_STATS(_thd_id, time_query, get_sys_clock() - starttime);
@@ -110,22 +130,62 @@ RC thread_t::run() {
 //#endif
 		m_txn->set_txn_id(get_thd_id() + thd_txn_id * g_thread_cnt);
 		thd_txn_id ++;
-
+    /*
     if (thd_txn_id % READRATE == 0)
       sample_read = true;
     if (thd_txn_id % TRANSRATE == 0)
       sample_trans = true;
     if (thd_txn_id % PARTRATE == 0) {
       sample_part = true;
-    }
+      }*/
 
     if (sample_part) {
-      if (!in_prog) {
-        if (part_num != 0) {
-          for (unsigned int i = part_num - 1; i != static_cast<unsigned>(-1); i--) {
-            part_con[part_query->part_to_access[i]] = false;
-          }
+      if (next_lock >= static_cast<int64_t>(part_num)) {
+        for (int i = part_num - 1; i >= 0; i--) {
+          part_con[part_to_access[i]] = false;
         }
+        next_lock = -1;
+      }
+      else {
+        if (next_lock == -1) {
+          next_lock = 0;
+          part_num = m_query->part_num;
+          for (unsigned int i = 0; i < part_num; i++) {
+            part_to_access[i] = m_query->part_to_access[i];
+          }
+          for (int i = part_num - 1; i > 0; i--)
+            for (int j = 0; j < i; j ++)
+              if (part_to_access[j] > part_to_access[j + 1]) {
+                uint64_t tmp = part_to_access[j];
+                part_to_access[j] = part_to_access[j + 1];
+                part_to_access[j + 1] = tmp;
+              }
+          report_info.part_success += part_num;
+        }
+        while (next_lock < static_cast<int64_t>(part_num)) {
+          if (!ATOM_CAS(part_con[part_to_access[next_lock]], false, true)) {
+              report_info.part_attempt++;
+              break;
+          }
+          next_lock++;
+        }
+      }
+    }
+    /*
+
+      memcpy(part_to_access, m_query->part_to_access, m_query->part_num * sizeof(uint64_t));
+      part_num = m_query->part_num;
+      for (int i = part_num - 1; i > 0; i--)
+        for (int j = 0; j < i; j ++)
+          if (part_to_access[j] > part_to_access[j + 1]) {
+            uint64_t tmp = part_to_access[j];
+            part_to_access[j] = part_to_access[j + 1];
+            part_to_access[j + 1] = tmp;
+          }
+      next_lock = -1;
+    }
+    if (next_lock = -1) {
+      next_lock = 0;
         in_prog = true;
         memcpy(part_to_access, m_query->part_to_access, m_query->part_num * sizeof(uint64_t));
         part_num = m_query->part_num;
@@ -139,7 +199,7 @@ RC thread_t::run() {
         next_lock = 0;
       }
       while (next_lock < part_num) {
-        //printf("%d\n", part_con[part_query->part_to_access[next_lock]]);
+        __sync_synchronize();
         if (ATOM_CAS(part_con[part_to_access[next_lock]], false, true)) {
           report_info.part_success++;
           next_lock++;
@@ -149,9 +209,10 @@ RC thread_t::run() {
           break;
         }
       }
-      if (next_lock >= part_query->part_num)
+      if (next_lock >= part_num)
         in_prog = false;
     }
+    done:*/
 
 		if ((CC_ALG == HSTORE && !HSTORE_LOCAL_TS)
 				|| CC_ALG == MVCC
@@ -292,8 +353,8 @@ RC thread_t::runTest(txn_man * txn)
 }
 
 void thread_t::mark_row(row_t * row) {
-  if (mark_state && !row->mark[_thd_id]) {
-    row->mark[_thd_id] = 1;
+  if (sample_conf && mark_state && !row->mark[_thd_id]) {
+    row->mark[_thd_id] = true;
     rec_set[mark_cntr] = row;
     mark_cntr++;
     mark_cntr %= MAXMARK;
@@ -305,28 +366,65 @@ void thread_t::mark_row(row_t * row) {
   } else if (!mark_state) {
     if (sample_cntr++ % RECORDRATE == 0) {
       for (unsigned int i = 0; i < _thd_id; i++) {
-        report_info.cont_cntr += row->mark[i];
+        if (row->mark[i])
+          report_info.cont_cntr++;
       }
       for (auto i = _thd_id + 1; i < g_thread_cnt; i++) {
-        report_info.cont_cntr += row->mark[i];
+        if (row->mark[i])
+          report_info.cont_cntr ++;
       }
       report_info.access_cntr++;
+      //printf("%ld %ld\n", report_info.cont_cntr, report_info.access_cntr);
       mark_cntr++;
       mark_cntr %= MAXDETECT;
       if (mark_cntr == 0) {
         mark_state = true;
         for (auto i = 0; i < MAXMARK; i++) {
-          rec_set[i]->mark[_thd_id] = 0;
+          rec_set[i]->mark[_thd_id] = false;
         }
       }
     }
   }
 }
+/*
+void thread_t::mark_part(uint64_t part_id) {
+  if (part_state && !part_con[part_id][_thd_id]) {
+    part_con[part_id][_thd_id] = true;
+    part_cntr++;
+    part_cntr %= MAXPART;
+    //printf("%lu ", mark_cntr);
+    if (part_cntr == 0) {
+      part_state = false;
+      sample_cntr = 0;
+    }
+  } else if (!mark_state) {
+    if (sample_cntr++ % RECORDRATE == 0) {
+      for (unsigned int i = 0; i < _thd_id; i++) {
+        if (row->mark[i])
+          report_info.cont_cntr++;
+      }
+      for (auto i = _thd_id + 1; i < g_thread_cnt; i++) {
+        if (row->mark[i])
+          report_info.cont_cntr ++;
+      }
+      report_info.access_cntr++;
+      //printf("%ld %ld\n", report_info.cont_cntr, report_info.access_cntr);
+      mark_cntr++;
+      mark_cntr %= MAXDETECT;
+      if (mark_cntr == 0) {
+        mark_state = true;
+        for (auto i = 0; i < MAXMARK; i++) {
+          rec_set[i]->mark[_thd_id] = false;
+        }
+      }
+    }
+  }
+}
+*/
 
-
-void thread_t::home_mark_row(row_t * row, uint64_t part_id) {
-  if (home_mark_state && !row->home_mark[_thd_id]) {
-    row->home_mark[_thd_id] = 1;
+void thread_t::home_mark_row(row_t * row) {
+  if (sample_conf && home_mark_state && !row->home_mark[_thd_id]) {
+    row->home_mark[_thd_id] = true;
     home_rec_set[home_mark_cntr] = row;
     home_mark_cntr++;
     home_mark_cntr %= MAXMARK;
@@ -337,10 +435,12 @@ void thread_t::home_mark_row(row_t * row, uint64_t part_id) {
   } else if (!home_mark_state) {
     if (home_sample_cntr++ % RECORDRATE == 0) {
       for (unsigned int i = 0; i < _thd_id; i++) {
-        report_info.home_cont += row->home_mark[i];
+        if (row->home_mark[i])
+          report_info.home_cont++;
       }
       for (auto i = _thd_id + 1; i < g_thread_cnt; i++) {
-        report_info.home_cont += row->home_mark[i];
+        if (row->home_mark[i])
+          report_info.home_cont++;
       }
       report_info.home_access ++;
       home_mark_cntr++;
@@ -348,7 +448,7 @@ void thread_t::home_mark_row(row_t * row, uint64_t part_id) {
       if (home_mark_cntr == 0) {
         home_mark_state = true;
         for (auto i = 0; i < MAXMARK; i++) {
-          home_rec_set[i]->home_mark[_thd_id] = 0;
+          home_rec_set[i]->home_mark[_thd_id] = false;
         }
       }
     }

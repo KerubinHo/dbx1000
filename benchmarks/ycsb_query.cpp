@@ -60,7 +60,7 @@ void ycsb_query::gen_requests(uint64_t thd_id, workload * h_wl) {
 #if CC_ALG == HSTORE
 	assert(g_virtual_part_cnt == g_part_cnt);
 #endif
-	//int access_cnt = 0;
+	int access_cnt = 0;
 	set<uint64_t> all_keys;
 	part_num = 0;
 	double r = 0;
@@ -116,7 +116,7 @@ void ycsb_query::gen_requests(uint64_t thd_id, workload * h_wl) {
 		lrand48_r(&_query_thd->buffer, &rint64);
 		req->value = rint64 % (1<<8);
 		// Make sure a single row is not accessed twice
-		/*if (req->rtype == RD || req->rtype == WR) {
+		if (req->rtype == RD || req->rtype == WR) {
 			if (all_keys.find(req->key) == all_keys.end()) {
 				all_keys.insert(req->key);
 				access_cnt ++;
@@ -135,7 +135,7 @@ void ycsb_query::gen_requests(uint64_t thd_id, workload * h_wl) {
 					all_keys.insert( (row_id + i) * g_part_cnt + part_id);
 				access_cnt += SCAN_LEN;
 			}
-      }*/
+      }
 		rid ++;
 	}
 	request_cnt = rid;

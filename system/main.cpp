@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 		pthread_create(&p_thds[i], NULL, f, (void *)vid);
 	}
   //f((void *)(thd_cnt - 1));
-   check();
+  check();
 	for (uint32_t i = 0; i < thd_cnt /*- 1*/; i++)
 		pthread_join(p_thds[i], NULL);
 	int64_t endtime = get_server_clock();
@@ -142,7 +142,6 @@ void check() {
   while (count == 0) {
     //ts_t starttime = get_sys_clock();
     sleep(1);
-    printf("ADAWEW\n");
     long double part_attempt = 0;
     long double part_success = 0;
     long double read_cnt = 0;
@@ -176,6 +175,7 @@ void check() {
         count++;
       }
     }
+    printf("%Lf %Lf\n", part_attempt, part_success);
     //ts_t endtime = get_sys_clock();
 		//uint64_t timespan = endtime - starttime;
     if (count == 0) {
@@ -206,8 +206,8 @@ void check() {
   cr /= tot_count;
   thp /= tot_count;
   home /= tot_count;
-  FILE * outf = fopen("pcc-train.out", "w");
-  fprintf(outf, "\t%.4lf\t0\t%.4lf\t0\t%.4lf\t%.4lf\t%.4lf", pc, tl, rr, home, cr);
-  FILE * temp = fopen("temp.out", "w");
-  fprintf(temp, "%f", thp);
+  FILE * outf = fopen("silo.dat", "w");
+  fprintf(outf, "%.4lf\t0\t%.4lf\t0\t%.4lf\t%.4lf\t%.4lf\t%.4lf\n", pc, tl, rr, home, cr,thp);
+  //FILE * temp = fopen("temp.out", "w");
+  //fprintf(temp, "%f", thp);
 }

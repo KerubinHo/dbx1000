@@ -38,7 +38,8 @@ public:
 	RC 			run();
   void sample_row(access_t type, size_t table_size);
   void mark_row(row_t * row);
-  void home_mark_row(row_t * row, uint64_t part_id);
+  void home_mark_row(row_t * row);
+  //void mark_part(uint64_t part_id)
   bool sample_trans;
 private:
 	uint64_t 	_host_cid;
@@ -55,15 +56,17 @@ private:
 		base_query * query;
 	};
 
+  bool sample_conf;
   bool sample_read;
   bool sample_part;
-  uint64_t next_lock;
+  int64_t next_lock;
 
+  //bool part_state;
   bool home_mark_state;
   uint64_t home_mark_cntr;
   uint64_t home_sample_cntr;
   uint64_t part_num;
-  uint64_t * part_to_access;
+  uint64_t part_to_access[THREAD_CNT];
   bool mark_state;
   bool in_prog;
   base_query * part_query;
@@ -71,6 +74,7 @@ private:
   row_t * home_rec_set[MAXMARK];
   uint64_t mark_cntr;
   uint64_t sample_cntr;
+  //uint64_t part_cntr;
 
 	AbortBufferEntry * _abort_buffer;
 	int _abort_buffer_size;

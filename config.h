@@ -111,7 +111,7 @@
 #define QUERY_INTVL 				1UL
 #define MAX_TXN_PER_PART 			500000
 #define FIRST_PART_LOCAL 			true
-#define MAX_TUPLE_SIZE				1024 // in bytes
+#define MAX_TUPLE_SIZE				12 // in bytes
 // ==== [YCSB] ====
 #define INIT_PARALLELISM			23
 #define SYNTH_TABLE_SIZE 			(1024 * 512 * 23)
@@ -219,7 +219,7 @@ extern TestCases					g_test_case;
 //Feature Extraction
 #define READRATE 500
 #define TRANSRATE 500
-#define PARTRATE 500
+#define PARTRATE 50
 #define RECORDRATE 2000
 #define MAXMARK 15
 #define MAXDETECT 20
