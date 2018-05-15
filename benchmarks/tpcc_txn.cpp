@@ -70,7 +70,7 @@ RC tpcc_txn_man::run_payment(thread_t * h_thd, tpcc_query * query) {
 	if (r_wh_local == NULL) {
 		return finish(Abort);
 	}
-  h_thd->mark_row(r_wh_local);
+  h_thd->mark_row(r_wh, r_wh->get_primary_key() % g_virtual_part_cnt);
 
 	double w_ytd;
 
@@ -96,7 +96,7 @@ RC tpcc_txn_man::run_payment(thread_t * h_thd, tpcc_query * query) {
 	if (r_dist_local == NULL) {
 		return finish(Abort);
 	}
-  h_thd->mark_row(r_dist_local);
+  h_thd->mark_row(r_dist, r_dist->get_primary_key() % g_virtual_part_cnt);
 
 	double d_ytd;
 	r_dist_local->get_value(D_YTD, d_ytd);
@@ -187,7 +187,7 @@ RC tpcc_txn_man::run_payment(thread_t * h_thd, tpcc_query * query) {
 	if (r_cust_local == NULL) {
 		return finish(Abort);
 	}
-  h_thd->mark_row(r_cust_local);
+  h_thd->mark_row(r_cust, r_cust->get_primary_key() % g_virtual_part_cnt);
 	double c_balance;
 	double c_ytd_payment;
 	double c_payment_cnt;
@@ -281,7 +281,7 @@ RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 	if (r_wh_local == NULL) {
 		return finish(Abort);
 	}
-  h_thd->mark_row(r_wh_local);
+  h_thd->mark_row(r_wh, r_wh->get_primary_key() % g_virtual_part_cnt);
 
 
 	double w_tax;
@@ -296,7 +296,7 @@ RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 	if (r_cust_local == NULL) {
 		return finish(Abort);
 	}
-  h_thd->mark_row(r_cust_local);
+  h_thd->mark_row(r_cust, r_cust->get_primary_key() % g_virtual_part_cnt);
 	uint64_t c_discount;
 	//char * c_last;
 	//char * c_credit;
@@ -321,7 +321,7 @@ RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 	if (r_dist_local == NULL) {
 		return finish(Abort);
 	}
-  h_thd->mark_row(r_dist_local);
+  h_thd->mark_row(r_dist, r_dist->get_primary_key() % g_virtual_part_cnt);
 	//double d_tax;
 	int64_t o_id;
 	//d_tax = *(double *) r_dist_local->get_value(D_TAX);
@@ -381,7 +381,7 @@ RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 		if (r_item_local == NULL) {
 			return finish(Abort);
 		}
-    h_thd->mark_row(r_item_local);
+    h_thd->mark_row(r_item, r_item->get_primary_key() % g_virtual_part_cnt);
 		int64_t i_price;
 		//char * i_name;
 		//char * i_data;
@@ -414,7 +414,7 @@ RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 		if (r_stock_local == NULL) {
 			return finish(Abort);
 		}
-    h_thd->mark_row(r_stock_local);
+    h_thd->mark_row(r_stock, r_stock->get_primary_key() % g_virtual_part_cnt);
 
 		// XXX s_dist_xx are not retrieved.
 		UInt64 s_quantity;
@@ -471,7 +471,7 @@ RC tpcc_txn_man::run_new_order(thread_t * h_thd, tpcc_query * query) {
 #endif
 		insert_row(r_ol, _wl->t_orderline);
     h_thd->sample_row(RD, _wl->t_orderline->get_table_size());
-    h_thd->mark_row(r_ol);
+    h_thd->mark_row(r_ol, r_ol->get_primary_key() % g_virtual_part_cnt);
 	}
 	assert( rc == RCOK );
 	return finish(rc);

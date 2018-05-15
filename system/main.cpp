@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 	glob_manager->init();
 	if (g_cc_alg == DL_DETECT)
 		dl_detector.init();
-	printf("mem_allocator initialized!\n");
+	//printf("mem_allocator initialized!\n");
 	workload * m_wl;
 	switch (WORKLOAD) {
 		case YCSB :
@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 			assert(false);
 	}
 	m_wl->init();
-	printf("workload initialized!\n");
+	//printf("workload initialized!\n");
 
 
 	uint64_t thd_cnt = g_thread_cnt;
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
 	if (WORKLOAD != TEST)
 		query_queue->init(m_wl);
 	pthread_barrier_init( &warmup_bar, NULL, g_thread_cnt );
-	printf("query_queue initialized!\n");
+	//printf("query_queue initialized!\n");
 #if CC_ALG == HSTORE
 	part_lock_man.init();
 #elif CC_ALG == OCC
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 	pthread_barrier_init( &warmup_bar, NULL, g_thread_cnt );
 
 	// spawn and run txns again.
-	int64_t starttime = get_server_clock();
+	//int64_t starttime = get_server_clock();
 	for (uint32_t i = 0; i < thd_cnt /* - 1*/; i++) {
 		uint64_t vid = i;
 		pthread_create(&p_thds[i], NULL, f, (void *)vid);
@@ -100,12 +100,12 @@ int main(int argc, char* argv[])
   check();
 	for (uint32_t i = 0; i < thd_cnt /*- 1*/; i++)
 		pthread_join(p_thds[i], NULL);
-	int64_t endtime = get_server_clock();
+	//int64_t endtime = get_server_clock();
 
 	if (WORKLOAD != TEST) {
-		printf("PASS! SimTime = %ld\n", endtime - starttime);
-		if (STATS_ENABLE)
-			stats.print();
+		//printf("PASS! SimTime = %ld\n", endtime - starttime);
+		//if (STATS_ENABLE)
+			//stats.print();
 	} else {
 		((TestWorkload *)m_wl)->summarize();
 	}
@@ -175,14 +175,16 @@ void check() {
         count++;
       }
     }
-    printf("%Lf %Lf\n", part_attempt, part_success);
+    //printf("%Lf %Lf\n", part_attempt, part_success);
     //ts_t endtime = get_sys_clock();
 		//uint64_t timespan = endtime - starttime;
     if (count == 0) {
       rr += (read_cnt-last_read_cnt) / (read_cnt - last_read_cnt + write_cnt - last_write_cnt);
       tl += (access_cnt - last_access_cnt) / (trans_cnt - last_trans_cnt);
       pc += (part_attempt - last_part_attempt) / (part_success - last_part_success);
-      cr += (cont_cntr - last_cont_cntr) / (access_cntr - last_access_cntr) * 100;
+      if (cont_cntr - last_cont_cntr > 0)
+        cr += (cont_cntr - last_cont_cntr) / (access_cntr - last_access_cntr) * 100;
+      if (home_cont - last_home_cont > 0)
       home += (home_cont - last_home_cont) / (home_access - last_home_access) * 100;
       thp += (txn_cnt - last_txn_cnt) * g_thread_cnt / ((run_time - last_run_time) / BILLION);
       tot_count++;
@@ -206,7 +208,7 @@ void check() {
   cr /= tot_count;
   thp /= tot_count;
   home /= tot_count;
-  FILE * outf = fopen("silo.dat", "w");
+  FILE * outf = fopen("no_wait.dat", "w");
   fprintf(outf, "%.4lf\t0\t%.4lf\t0\t%.4lf\t%.4lf\t%.4lf\t%.4lf\n", pc, tl, rr, home, cr,thp);
   //FILE * temp = fopen("temp.out", "w");
   //fprintf(temp, "%f", thp);

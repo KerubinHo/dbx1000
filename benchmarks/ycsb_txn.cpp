@@ -59,11 +59,9 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 				rc = Abort;
 				goto final;
 			}
-      if (req->key % g_virtual_part_cnt != h_thd->_thd_id)
-        h_thd->mark_row(row);
-      else
-        h_thd->home_mark_row(row);
-
+      if (h_thd->sample_conf)
+        h_thd->mark_row(row, req->key % g_virtual_part_cnt);
+      //Catalog * schema = wl->the_table->get_schema();
 			// Computation //
 			// Only do computation when there are more than 1 requests.
             if (m_query->request_cnt > 1) {
@@ -75,11 +73,11 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 //                  }
                 } else {
                     assert(req->rtype == WR);
-//					for (int fid = 0; fid < schema->get_field_cnt(); fid++) {
-						int fid = 0;
+                    /*for (unsigned int fid = 0; fid < schema->get_field_cnt(); fid++) {
+						//int fid = 0;
 						char * data = row->get_data();
 						*(uint64_t *)(&data[fid * 10]) = 0;
-//					}
+					}*/
                 }
             }
 

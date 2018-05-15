@@ -103,7 +103,7 @@ public:
   #endif
 	char * data;
   bool * mark;
-  bool * home_mark;
+  //bool * home_mark;
 	table_t * table;
 private:
 	// primary key should be calculated from the data stored in the row.

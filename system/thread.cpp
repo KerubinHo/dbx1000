@@ -1,3 +1,4 @@
+
 #include <sched.h>
 #include "global.h"
 #include "manager.h"
@@ -24,10 +25,10 @@ void thread_t::init(uint64_t thd_id, workload * workload) {
 	_abort_buffer_empty_slots = _abort_buffer_size;
 	_abort_buffer_enable = (g_params["abort_buffer_enable"] == "true");
   sample_read = sample_part = sample_trans = in_prog = sample_conf = false;
-  mark_cntr = sample_cntr = home_mark_cntr = home_sample_cntr = 0;
+  mark_cntr = sample_cntr = /*home_mark_cntr = home_sample_cntr =*/ 0;
   part_num = 0;
   next_lock = -1;
-  home_mark_state = mark_state /*= part_state*/ = true;
+  /*home_mark_state = */mark_state /*= part_state*/ = true;
   report_info = {0,0,0,0,0,0,0,0,0,0};
 }
 
@@ -125,9 +126,9 @@ RC thread_t::run() {
 		}
 		INC_STATS(_thd_id, time_query, get_sys_clock() - starttime);
 		m_txn->abort_cnt = 0;
-    //#if CC_ALG == VLL
-//		_wl->get_txn_man(m_txn, this);
-//#endif
+    #if CC_ALG == VLL
+		  _wl->get_txn_man(m_txn, this);
+    #endif
 		m_txn->set_txn_id(get_thd_id() + thd_txn_id * g_thread_cnt);
 		thd_txn_id ++;
     /*
@@ -180,7 +181,7 @@ RC thread_t::run() {
           if (part_to_access[j] > part_to_access[j + 1]) {
             uint64_t tmp = part_to_access[j];
             part_to_access[j] = part_to_access[j + 1];
-            part_to_access[j + 1] = tmp;
+pfy            part_to_access[j + 1] = tmp;
           }
       next_lock = -1;
     }
@@ -352,7 +353,7 @@ RC thread_t::runTest(txn_man * txn)
 	return RCOK;
 }
 
-void thread_t::mark_row(row_t * row) {
+void thread_t::mark_row(row_t * row, uint64_t part_id) {
   if (sample_conf && mark_state && !row->mark[_thd_id]) {
     row->mark[_thd_id] = true;
     rec_set[mark_cntr] = row;
@@ -365,15 +366,26 @@ void thread_t::mark_row(row_t * row) {
     }
   } else if (!mark_state) {
     if (sample_cntr++ % RECORDRATE == 0) {
+      uint64_t *cont_cntr;
+      uint64_t *access_cntr;
+      if (part_id != _thd_id) {
+        cont_cntr = &report_info.cont_cntr;
+        access_cntr = &report_info.access_cntr;
+      }
+      else {
+        cont_cntr = &report_info.home_cont;
+        access_cntr = &report_info.home_access;
+      }
+
       for (unsigned int i = 0; i < _thd_id; i++) {
         if (row->mark[i])
-          report_info.cont_cntr++;
+          (*cont_cntr)++;
       }
       for (auto i = _thd_id + 1; i < g_thread_cnt; i++) {
         if (row->mark[i])
-          report_info.cont_cntr ++;
+          (*cont_cntr)++;
       }
-      report_info.access_cntr++;
+      (*access_cntr)++;
       //printf("%ld %ld\n", report_info.cont_cntr, report_info.access_cntr);
       mark_cntr++;
       mark_cntr %= MAXDETECT;
@@ -420,7 +432,7 @@ void thread_t::mark_part(uint64_t part_id) {
     }
   }
 }
-*/
+
 
 void thread_t::home_mark_row(row_t * row) {
   if (sample_conf && home_mark_state && !row->home_mark[_thd_id]) {
@@ -454,6 +466,7 @@ void thread_t::home_mark_row(row_t * row) {
     }
   }
 }
+*/
 
 void thread_t::sample_row(access_t type, size_t table_size) {
   if (sample_read) {

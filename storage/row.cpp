@@ -24,9 +24,9 @@ row_t::init(table_t * host_table, uint64_t part_id, uint64_t row_id) {
 	int tuple_size = schema->get_tuple_size();
 	data = (char *) _mm_malloc(sizeof(char) * tuple_size, 64);
   mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
-  home_mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
+  //home_mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
   memset(mark, 0, g_thread_cnt * sizeof(bool));
-  memset(home_mark, 0, g_thread_cnt * sizeof(bool));
+  //memset(home_mark, 0, g_thread_cnt * sizeof(bool));
 	return RCOK;
 }
 void
@@ -34,9 +34,9 @@ row_t::init(int size)
 {
 	data = (char *) _mm_malloc(size, 64);
   mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
-  home_mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
+  //home_mark = (bool *) _mm_malloc(sizeof(bool) * g_thread_cnt, 64);
   memset(mark, 0, g_thread_cnt * sizeof(bool));
-  memset(home_mark, 0, g_thread_cnt * sizeof(bool));
+  //memset(home_mark, 0, g_thread_cnt * sizeof(bool));
 }
 
 RC
@@ -143,7 +143,9 @@ void row_t::free_row() {
 RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 	RC rc = RCOK;
 #if CC_ALG == WAIT_DIE || CC_ALG == NO_WAIT || CC_ALG == DL_DETECT
+#if CC_ALG != NO_WAIT
 	uint64_t thd_id = txn->get_thd_id();
+#endif
 	lock_t lt = (type == RD || type == SCAN)? LOCK_SH : LOCK_EX;
 #if CC_ALG == DL_DETECT
 	uint64_t * txnids;
@@ -156,6 +158,7 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 	if (rc == RCOK) {
 		row = this;
 	} else if (rc == Abort) {}
+#if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
 	else if (rc == WAIT) {
 		ASSERT(CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT);
 		uint64_t starttime = get_sys_clock();
@@ -215,6 +218,7 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 		INC_TMP_STATS(thd_id, time_wait, endtime - starttime);
 		row = this;
 	}
+#endif
 	return rc;
 #elif CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == HEKATON
 	uint64_t thd_id = txn->get_thd_id();
@@ -261,7 +265,7 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 	rc = this->manager->access(txn, ts_type, row);
 	return rc;
 #elif CC_ALG == HSTORE || CC_ALG == VLL
-	row = this;
+	//row = this;
 	return rc;
 #else
 	assert(false);

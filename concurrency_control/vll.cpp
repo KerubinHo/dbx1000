@@ -4,6 +4,7 @@
 #include "row.h"
 #include "row_vll.h"
 #include "ycsb_query.h"
+#include "thread.h"
 #include "ycsb.h"
 #include "wl.h"
 #include "catalog.h"
@@ -105,6 +106,9 @@ uint64_t t3 = get_sys_clock();
 	for (int rid = 0; rid < txn->row_cnt; rid ++) {
 		row_t * row = txn->accesses[rid]->orig_row;
 		access_t type = txn->accesses[rid]->type;
+    txn->h_thd->sample_row(type, 1);
+    if (txn->h_thd->sample_conf)
+      txn->h_thd->mark_row(row, row->get_primary_key() % g_virtual_part_cnt);
 		if (type == RD) {
 			for (unsigned int fid = 0; fid < schema->get_field_cnt(); fid++) {
 				//char * data = row->get_data();
@@ -112,10 +116,10 @@ uint64_t t3 = get_sys_clock();
            	}
 		} else {
 			assert(type == WR);
-			for (unsigned int fid = 0; fid < schema->get_field_cnt(); fid++) {
+			/*for (unsigned int fid = 0; fid < schema->get_field_cnt(); fid++) {
 				char * data = row->get_data();
 				*(uint64_t *)(&data[fid * 100]) = 0;
-			}
+        }*/
 		}
 	}
 uint64_t tt3 = get_sys_clock() - t3;

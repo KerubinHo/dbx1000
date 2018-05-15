@@ -30,6 +30,7 @@ public:
     uint64_t part_success;
     uint64_t part_attempt;
   } report_info;
+  bool sample_conf;
 
 	void 		init(uint64_t thd_id, workload * workload);
 	// the following function must be in the form void* (*)(void*)
@@ -37,8 +38,8 @@ public:
 	// conversion is done within the function.
 	RC 			run();
   void sample_row(access_t type, size_t table_size);
-  void mark_row(row_t * row);
-  void home_mark_row(row_t * row);
+  void mark_row(row_t * row, uint64_t part_id);
+  //void home_mark_row(row_t * row);
   //void mark_part(uint64_t part_id)
   bool sample_trans;
 private:
@@ -56,22 +57,21 @@ private:
 		base_query * query;
 	};
 
-  bool sample_conf;
   bool sample_read;
   bool sample_part;
   int64_t next_lock;
 
   //bool part_state;
-  bool home_mark_state;
-  uint64_t home_mark_cntr;
-  uint64_t home_sample_cntr;
+  //bool home_mark_state;
+  //uint64_t home_mark_cntr;
+  //uint64_t home_sample_cntr;
   uint64_t part_num;
   uint64_t part_to_access[THREAD_CNT];
   bool mark_state;
   bool in_prog;
-  base_query * part_query;
+  //base_query * part_query;
   row_t * rec_set[MAXMARK];
-  row_t * home_rec_set[MAXMARK];
+  //row_t * home_rec_set[MAXMARK];
   uint64_t mark_cntr;
   uint64_t sample_cntr;
   //uint64_t part_cntr;
