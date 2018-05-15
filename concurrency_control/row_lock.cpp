@@ -10,15 +10,13 @@ void Row_lock::init(row_t * row) {
 	owners = NULL;
 	waiters_head = NULL;
 	waiters_tail = NULL;
-	owner_cnt = 0;
 	waiter_cnt = 0;
-
-	latch = new pthread_mutex_t;
-	pthread_mutex_init(latch, NULL);
 #endif
 	lock_type = LOCK_NONE;
 	blatch = false;
-
+  latch = new pthread_mutex_t;
+	pthread_mutex_init(latch, NULL);
+  owner_cnt = 0;
 }
 
 RC Row_lock::lock_get(lock_t type, txn_man * txn) {
@@ -30,12 +28,12 @@ RC Row_lock::lock_get(lock_t type, txn_man * txn) {
 RC Row_lock::lock_get(lock_t type, txn_man * txn, uint64_t* &txnids, int &txncnt) {
 	assert (CC_ALG == DL_DETECT || CC_ALG == NO_WAIT || CC_ALG == WAIT_DIE);
 	RC rc;
-#if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
-	int part_id =_row->get_part_id();
-	if (g_central_man)
+  if (g_central_man)
 		glob_manager->lock_row(_row);
 	else
 		pthread_mutex_lock( latch );
+#if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
+	int part_id =_row->get_part_id();
 	assert(owner_cnt <= g_thread_cnt);
 	assert(waiter_cnt < g_thread_cnt);
 #endif
@@ -74,15 +72,9 @@ RC Row_lock::lock_get(lock_t type, txn_man * txn, uint64_t* &txnids, int &txncnt
 	if (conflict) {
 		// Cannot be added to the owner list.
 		if (CC_ALG == NO_WAIT) {
-      if (!ATOM_CAS(blatch, false, true)) {
 			  rc = Abort;
 			  goto final;
-      }
-      else {
-        lock_type = type;
-        rc = RCOK;
-      }
-		}
+    }
 #if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
     else if (CC_ALG == DL_DETECT) {
 			LockEntry * entry = get_entry();
@@ -140,10 +132,10 @@ RC Row_lock::lock_get(lock_t type, txn_man * txn, uint64_t* &txnids, int &txncnt
 		entry->type = type;
 		entry->txn = txn;
 		STACK_PUSH(owners, entry);
-		owner_cnt ++;
-		if (CC_ALG == DL_DETECT)
+    if (CC_ALG == DL_DETECT)
 			ASSERT(waiters_head == NULL);
 #endif
+		owner_cnt ++;
     lock_type = type;
     rc = RCOK;
 	}
@@ -168,23 +160,22 @@ final:
 			}
 		ASSERT(txncnt > 0);
 	}
+#endif
 	if (g_central_man)
 		glob_manager->release_row(_row);
 	else
 		pthread_mutex_unlock( latch );
-#endif
 
 	return rc;
 }
 
 
 RC Row_lock::lock_release(txn_man * txn) {
-#if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
 	if (g_central_man)
 		glob_manager->lock_row(_row);
 	else
 		pthread_mutex_lock( latch );
-
+#if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
 	// Try to find the entry in the owners
 	LockEntry * en = owners;
 	LockEntry * prev = NULL;
@@ -214,14 +205,18 @@ RC Row_lock::lock_release(txn_man * txn) {
 		return_entry(en);
 		waiter_cnt --;
 	}
-
+#else
+  owner_cnt--;
+  if (owner_cnt == 0)
+    lock_type = LOCK_NONE;
+#endif
 	if (owner_cnt == 0)
 		ASSERT(lock_type == LOCK_NONE);
 #if DEBUG_ASSERT && CC_ALG == WAIT_DIE
 		for (en = waiters_head; en != NULL && en->next != NULL; en = en->next)
 			assert(en->next->txn->get_ts() < en->txn->get_ts());
 #endif
-
+#if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
 	LockEntry * entry;
 	// If any waiter can join the owners, just do it!
 	while (waiters_head && !conflict_lock(lock_type, waiters_head->type)) {
@@ -234,14 +229,11 @@ RC Row_lock::lock_release(txn_man * txn) {
 		lock_type = entry->type;
 	}
 	ASSERT((owners == NULL) == (owner_cnt == 0));
-
+#endif
 	if (g_central_man)
 		glob_manager->release_row(_row);
 	else
 		pthread_mutex_unlock( latch );
-#else
-  blatch = false;
-#endif
 	return RCOK;
 }
 

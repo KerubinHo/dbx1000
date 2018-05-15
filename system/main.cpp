@@ -208,7 +208,7 @@ void check() {
   cr /= tot_count;
   thp /= tot_count;
   home /= tot_count;
-  FILE * outf = fopen("hstore.dat", "w");
+  FILE * outf = fopen("no_wait.dat", "w");
   fprintf(outf, "%.4lf\t0\t%.4lf\t0\t%.4lf\t%.4lf\t%.4lf\t%.4lf\n", pc, tl, rr, home, cr,thp);
   //FILE * temp = fopen("temp.out", "w");
   //fprintf(temp, "%f", thp);

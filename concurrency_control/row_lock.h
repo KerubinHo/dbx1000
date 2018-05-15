@@ -23,9 +23,9 @@ private:
   bool 		conflict_lock(lock_t l1, lock_t l2);
   LockEntry * get_entry();
   void 		return_entry(LockEntry * entry);
-#if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
-  pthread_mutex_t * latch;
   UInt32 owner_cnt;
+  pthread_mutex_t * latch;
+#if CC_ALG == WAIT_DIE || CC_ALG == DL_DETECT
   UInt32 waiter_cnt;
 
 	// owners is a single linked list

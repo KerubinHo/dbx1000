@@ -14,9 +14,9 @@ CPPS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp))
 OBJS = $(CPPS:.cpp=.o)
 DEPS = $(CPPS:.cpp=.d)
 
-all:hstore
+all:no_wait
 
-hstore : $(OBJS)
+no_wait : $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 -include $(OBJS:%.o=%.d)
@@ -29,4 +29,4 @@ hstore : $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f hstore $(OBJS) $(DEPS)
+	rm -f no_wait $(OBJS) $(DEPS)
