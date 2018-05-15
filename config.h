@@ -39,7 +39,7 @@
 /***********************************************/
 // WAIT_DIE, NO_WAIT, DL_DETECT, TIMESTAMP, MVCC, HEKATON, HSTORE, OCC, VLL, TICTOC, SILO
 // TODO TIMESTAMP does not work at this moment
-#define CC_ALG 						NO_WAIT
+#define CC_ALG 						HSTORE
 #define ISOLATION_LEVEL 			SERIALIZABLE
 
 // all transactions acquire tuples according to the primary key order.
@@ -109,12 +109,12 @@
 // max number of rows touched per transaction
 #define MAX_ROW_PER_TXN				64
 #define QUERY_INTVL 				1UL
-#define MAX_TXN_PER_PART 			500000
-#define FIRST_PART_LOCAL 			false
-#define MAX_TUPLE_SIZE				12 // in bytes
+#define MAX_TXN_PER_PART 			400000
+#define FIRST_PART_LOCAL 			true
+#define MAX_TUPLE_SIZE				512 // in bytes
 // ==== [YCSB] ====
 #define INIT_PARALLELISM			23
-#define SYNTH_TABLE_SIZE 			(1024 * 512 * 23)
+#define SYNTH_TABLE_SIZE 			(1024 * 425 * 23)
 #define ZIPF_THETA 					0.6
 #define READ_PERC 					0.9
 #define WRITE_PERC 					0.1
