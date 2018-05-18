@@ -15,3 +15,8 @@ cp ./system/no_wait_main.temp ./system/main.cpp
 cp no_wait_make Makefile
 make clean
 make -j
+cp mvcc_config.h config.h
+cp ./system/mvcc_main.temp ./system/main.cpp
+cp mvcc_make Makefile
+make clean
+make -j
