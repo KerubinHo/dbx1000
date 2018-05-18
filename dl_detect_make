@@ -14,9 +14,9 @@ CPPS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)*.cpp))
 OBJS = $(CPPS:.cpp=.o)
 DEPS = $(CPPS:.cpp=.d)
 
-all:occ
+all:dl_detect
 
-occ : $(OBJS)
+dl_detect : $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 -include $(OBJS:%.o=%.d)
@@ -29,4 +29,4 @@ occ : $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f occ $(OBJS) $(DEPS)
+	rm -f dl_detect $(OBJS) $(DEPS)

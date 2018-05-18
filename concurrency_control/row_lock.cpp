@@ -140,7 +140,7 @@ RC Row_lock::lock_get(lock_t type, txn_man * txn, uint64_t* &txnids, int &txncnt
     rc = RCOK;
 	}
 final:
-#if CC_ALG == DL_DETECT
+#if CC_ALG == DL_DETECT || CC_ALG == WAIT_DIE
 	if (rc == WAIT && CC_ALG == DL_DETECT) {
 		// Update the waits-for graph
 		ASSERT(waiters_tail->txn == txn);
