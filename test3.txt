@@ -21,7 +21,7 @@ int main() {
   vector<double> read = {50, 70, 90, 95, 100};
   vector<string> cc = {"hstore", "silo", "no_wait", "mvcc", "wait_die", "dl_detect", "hekaton", "occ", "vll", "tictoc"};
 
-  ofstream out("occ-train.out");
+  ofstream out("all-train.out");
   int count = 0;
   for (size_t r = 0; r < read.size(); r++) {
     for (size_t R = 0; R < length.size(); R++) {
