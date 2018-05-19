@@ -217,10 +217,10 @@ extern TestCases					g_test_case;
 
 
 //Feature Extraction
-#define READRATE 500
-#define TRANSRATE 500
-#define PARTRATE 50
-#define RECORDRATE 2000
+#define READRATE 250
+#define TRANSRATE 250
+#define PARTRATE 250
+#define RECORDRATE 1000
 #define MAXMARK 15
 #define MAXDETECT 20
 #endif
