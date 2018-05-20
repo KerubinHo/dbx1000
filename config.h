@@ -109,7 +109,7 @@
 // max number of rows touched per transaction
 #define MAX_ROW_PER_TXN				64
 #define QUERY_INTVL 				1UL
-#define MAX_TXN_PER_PART 			1200000
+#define MAX_TXN_PER_PART 			600000
 #define FIRST_PART_LOCAL 			false
 #define MAX_TUPLE_SIZE				512 // in bytes
 // ==== [YCSB] ====
@@ -217,10 +217,10 @@ extern TestCases					g_test_case;
 
 
 //Feature Extraction
-#define READRATE 500
-#define TRANSRATE 500
-#define PARTRATE 50
-#define RECORDRATE 2000
+#define READRATE 250
+#define TRANSRATE 250
+#define PARTRATE 250
+#define RECORDRATE 1000
 #define MAXMARK 15
 #define MAXDETECT 20
 #endif
