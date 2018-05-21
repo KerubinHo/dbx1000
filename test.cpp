@@ -23,10 +23,10 @@ int main() {
 
   ofstream stat("allpcc-stat.out");
   ofstream out("allpcc-train.out");
-  int count = 0;
-  for (size_t r = 0; r < read.size(); r++) {
-    for (size_t R = 0; R < length.size(); R++) {
-      for (size_t z = 0; z < zipf.size(); z++) {
+  int count = 396;
+  for (size_t r = 1; r < read.size(); r++) {
+    for (size_t R = 3; R < length.size(); R++) {
+      for (size_t z = 3; z < zipf.size(); z++) {
         int e = 0;
         int min = 0;
         int max = 100;
