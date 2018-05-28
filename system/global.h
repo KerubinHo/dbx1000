@@ -92,6 +92,7 @@ extern map<string, string> g_params;
 // YCSB
 extern UInt32 g_cc_alg;
 extern ts_t g_query_intvl;
+extern UInt32 g_scan_len;
 extern UInt32 g_part_per_txn;
 extern double g_perc_multi_part;
 extern double g_read_perc;

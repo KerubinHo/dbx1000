@@ -100,7 +100,7 @@ void ycsb_query::gen_requests(uint64_t thd_id, workload * h_wl) {
 			req->rtype = WR;
 		} else {
 			req->rtype = SCAN;
-			req->scan_len = SCAN_LEN;
+			req->scan_len = g_scan_len;
 		}
 
 		// the request will access part_id.
@@ -133,7 +133,7 @@ void ycsb_query::gen_requests(uint64_t thd_id, workload * h_wl) {
 			else {
 				for (UInt32 i = 0; i < req->scan_len; i++)
 					all_keys.insert( (row_id + i) * g_part_cnt + part_id);
-				access_cnt += SCAN_LEN;
+				access_cnt += g_scan_len;
 			}
       }
 		rid ++;

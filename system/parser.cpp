@@ -17,10 +17,10 @@ void print_usage() {
 	printf("\t-GnINT      ; NO_DL\n");
 	printf("\t-GoINT      ; TIMEOUT\n");
 	printf("\t-GlINT      ; DL_LOOP_DETECT\n");
-	
+
 	printf("\t-GbINT      ; TS_BATCH_ALLOC\n");
 	printf("\t-GuINT      ; TS_BATCH_NUM\n");
-	
+
 	printf("\t-o STRING   ; output file\n\n");
 	printf("  [YCSB]:\n");
 	printf("\t-cINT       ; PART_PER_TXN\n");
@@ -59,14 +59,16 @@ void parser(int argc, char * argv[]) {
 			g_part_per_txn = atoi( &argv[i][2] );
 		else if (argv[i][1] == 'e')
 			g_perc_multi_part = atof( &argv[i][2] );
-		else if (argv[i][1] == 'r') 
+		else if (argv[i][1] == 'r')
 			g_read_perc = atof( &argv[i][2] );
-		else if (argv[i][1] == 'w') 
+		else if (argv[i][1] == 'w')
 			g_write_perc = atof( &argv[i][2] );
 		else if (argv[i][1] == 'z')
 			g_zipf_theta = atof( &argv[i][2] );
 		else if (argv[i][1] == 'd')
 			g_prt_lat_distr = atoi( &argv[i][2] );
+    else if (argv[i][1] == 's')
+			g_scan_len = atoi( &argv[i][2] );
 		else if (argv[i][1] == 'p')
 			g_part_cnt = atoi( &argv[i][2] );
 		else if (argv[i][1] == 'v')
@@ -75,7 +77,7 @@ void parser(int argc, char * argv[]) {
 			g_thread_cnt = atoi( &argv[i][2] );
 		else if (argv[i][1] == 's')
 			g_synth_table_size = atoi( &argv[i][2] );
-		else if (argv[i][1] == 'R') 
+		else if (argv[i][1] == 'R')
 			g_req_per_query = atoi( &argv[i][2] );
 		else if (argv[i][1] == 'f')
 			g_field_per_tuple = atoi( &argv[i][2] );
@@ -118,10 +120,10 @@ void parser(int argc, char * argv[]) {
 		else if (argv[i][1] == 'h') {
 			print_usage();
 			exit(0);
-		} 
+		}
 		else if (argv[i][1] == '-') {
 			string line(&argv[i][2]);
-			size_t pos = line.find("="); 
+			size_t pos = line.find("=");
 			assert(pos != string::npos);
 			string name = line.substr(0, pos);
 			string value = line.substr(pos + 1, line.length());
