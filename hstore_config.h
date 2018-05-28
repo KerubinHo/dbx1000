@@ -111,7 +111,7 @@
 #define QUERY_INTVL 				1UL
 #define MAX_TXN_PER_PART 			600000
 #define FIRST_PART_LOCAL 			true
-#define MAX_TUPLE_SIZE				512 // in bytes
+#define MAX_TUPLE_SIZE				1024 // in bytes
 // ==== [YCSB] ====
 #define INIT_PARALLELISM			23
 #define SYNTH_TABLE_SIZE 			(1024 * 425 * 23)

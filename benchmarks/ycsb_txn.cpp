@@ -39,9 +39,9 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 		bool finish_req = false;
 		UInt32 iteration = 0;
 		while ( !finish_req ) {
-			//if (iteration == 0) {
+			if (iteration == 0) {
 				m_item = index_read(_wl->the_index, req->key, part_id);
-        //}
+      }
 #if INDEX_STRUCT == IDX_BTREE
 			else {
 				_wl->the_index->index_next(get_thd_id(), m_item);
@@ -64,23 +64,22 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
       //Catalog * schema = wl->the_table->get_schema();
 			// Computation //
 			// Only do computation when there are more than 1 requests.
-            if (m_query->request_cnt > 1) {
-                if (req->rtype == RD || req->rtype == SCAN) {
-//                  for (int fid = 0; fid < schema->get_field_cnt(); fid++) {
-						int fid = 0;
-						char * data = row_local->get_data();
-						__attribute__((unused)) uint64_t fval = *(uint64_t *)(&data[fid * 10]);
-//                  }
-                } else {
-                    assert(req->rtype == WR);
-                    /*for (unsigned int fid = 0; fid < schema->get_field_cnt(); fid++) {
-						//int fid = 0;
-						char * data = row->get_data();
-						*(uint64_t *)(&data[fid * 10]) = 0;
-					}*/
-                }
-            }
-
+      if (m_query->request_cnt > 1) {
+        if (req->rtype == RD || req->rtype == SCAN) {
+          //                  for (int fid = 0; fid < schema->get_field_cnt(); fid++) {
+          int fid = 0;
+          char * data = row_local->get_data();
+          __attribute__((unused)) uint64_t fval = *(uint64_t *)(&data[fid * 10]);
+          //                  }
+        } else {
+          assert(req->rtype == WR);
+          //					for (int fid = 0; fid < schema->get_field_cnt(); fid++) {
+          int fid = 0;
+          char * data = row->get_data();
+          *(uint64_t *)(&data[fid * 10]) = 0;
+          //					}
+        }
+      }
 
 			iteration ++;
 			if (req->rtype == RD || req->rtype == WR || iteration == req->scan_len)
