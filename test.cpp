@@ -16,7 +16,7 @@
 using namespace std;
 
 int main() {
-  vector<double> zipf = {0, 0.2, 0.4, 0.6, 0.8, 1.01, 1.2, 1.4};
+  vector<double> zipf = {0, 0.3, 0.6, 0.9, 1.2, 1.5};
   vector<int> scan = {5, 10, 15, 20};
   vector<int> scan_len = {10, 20, 30};
   vector<int> length = {10, 20, 30};
