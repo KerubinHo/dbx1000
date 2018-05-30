@@ -72,9 +72,9 @@
 // [MVCC]
 // when read/write history is longer than HIS_RECYCLE_LEN
 // the history should be recycled.
-//#define HIS_RECYCLE_LEN				10
-//#define MAX_PRE_REQ					1024
-//#define MAX_READ_REQ				1024
+#define HIS_RECYCLE_LEN				10
+#define MAX_PRE_REQ					1024
+#define MAX_READ_REQ				1024
 #define MIN_TS_INTVL				5000000 //5 ms. In nanoseconds
 // [OCC]
 #define MAX_WRITE_SET				10
@@ -109,7 +109,7 @@
 // max number of rows touched per transaction
 #define MAX_ROW_PER_TXN				64
 #define QUERY_INTVL 				1UL
-#define MAX_TXN_PER_PART 			600000
+#define MAX_TXN_PER_PART 			50000
 #define FIRST_PART_LOCAL 			false
 #define MAX_TUPLE_SIZE				1024 // in bytes
 // ==== [YCSB] ====

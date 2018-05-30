@@ -52,6 +52,10 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 			row_t * row = ((row_t *)m_item->location);
 			row_t * row_local;
 			access_t type = req->rtype;
+			if(type == SCAN) {
+				uint32_t test = 0;
+				test++;
+			}
 
 			row_local = get_row(row, type);
       h_thd->sample_row(type, 1);

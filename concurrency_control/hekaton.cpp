@@ -25,7 +25,7 @@ txn_man::validate_hekaton(RC rc)
 #endif
 	// postprocess 
 	for (int rid = 0; rid < row_cnt; rid ++) {
-		if (accesses[rid]->type == RD)
+		if (accesses[rid]->type == RD || accesses[rid]->type == SCAN)
 			continue;
 		accesses[rid]->orig_row->manager->post_process(this, commit_ts, rc);
 	}

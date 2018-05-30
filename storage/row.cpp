@@ -234,7 +234,7 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
   #endif
 
 	// TODO need to initialize the table/catalog information.
-	TsType ts_type = (type == RD)? R_REQ : P_REQ;
+	TsType ts_type = (type == RD || type == SCAN)? R_REQ : P_REQ;
 	rc = this->manager->access(txn, ts_type, row);
 	if (rc == RCOK ) {
 		row = txn->cur_row;
