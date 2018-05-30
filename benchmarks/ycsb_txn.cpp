@@ -40,7 +40,12 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 		UInt32 iteration = 0;
 		while ( !finish_req ) {
 			if (iteration == 0) {
+        part_id = wl->key_to_part( req->key );
 				m_item = index_read(_wl->the_index, req->key, part_id);
+      }
+      else {
+        part_id = wl->key_to_part( req->key + (g_part_cnt * iteration));
+				m_item = index_read(_wl->the_index, req->key + (g_part_cnt * iteration), part_id);
       }
 #if INDEX_STRUCT == IDX_BTREE
 			else {
@@ -52,10 +57,6 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 			row_t * row = ((row_t *)m_item->location);
 			row_t * row_local;
 			access_t type = req->rtype;
-			if(type == SCAN) {
-				uint32_t test = 0;
-				test++;
-			}
 
 			row_local = get_row(row, type);
       h_thd->sample_row(type, 1);
@@ -64,7 +65,7 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
 				goto final;
 			}
       if (h_thd->sample_conf)
-        h_thd->mark_row(row, req->key % g_virtual_part_cnt);
+        h_thd->mark_row(row, (req->key + (g_part_cnt * iteration)) % g_virtual_part_cnt);
       //Catalog * schema = wl->the_table->get_schema();
 			// Computation //
 			// Only do computation when there are more than 1 requests.
@@ -78,9 +79,9 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
         } else {
           assert(req->rtype == WR);
           //					for (int fid = 0; fid < schema->get_field_cnt(); fid++) {
-          int fid = 0;
-          char * data = row->get_data();
-          *(uint64_t *)(&data[fid * 10]) = 0;
+          //int fid = 0;
+          //char * data = row->get_data();
+          //*(uint64_t *)(&data[fid * 10]) = 0;
           //					}
         }
       }

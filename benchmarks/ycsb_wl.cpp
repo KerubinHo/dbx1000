@@ -45,7 +45,7 @@ RC ycsb_wl::init_schema(string schema_file) {
 
 int
 ycsb_wl::key_to_part(uint64_t key) {
-	uint64_t rows_per_part = g_synth_table_size / g_part_cnt;
+	uint64_t rows_per_part = (g_synth_table_size + 690) / g_part_cnt;
 	return key / rows_per_part;
 }
 
@@ -121,7 +121,7 @@ void * ycsb_wl::init_table_slice() {
 	assert(tid < g_init_parallelism);
 	while ((UInt32)ATOM_FETCH_ADD(next_tid, 0) < g_init_parallelism) {}
 	assert((UInt32)ATOM_FETCH_ADD(next_tid, 0) == g_init_parallelism);
-	uint64_t slice_size = g_synth_table_size / g_init_parallelism;
+	uint64_t slice_size = (g_synth_table_size + 690) / g_init_parallelism;
 	for (uint64_t key = slice_size * tid;
 			key < slice_size * (tid + 1);
 			key ++

@@ -235,7 +235,11 @@ RC row_t::get_row(access_t type, txn_man * txn, row_t *& row) {
 
 	// TODO need to initialize the table/catalog information.
 	TsType ts_type = (type == RD || type == SCAN)? R_REQ : P_REQ;
-	rc = this->manager->access(txn, ts_type, row);
+  #if CC_ALG == HEKATON
+	rc = this->manager->access(txn, ts_type/*, row*/);
+  #else
+  rc = this->manager->access(txn, ts_type, row);
+  #endif
 	if (rc == RCOK ) {
 		row = txn->cur_row;
 	} else if (rc == WAIT) {
