@@ -79,9 +79,9 @@ RC ycsb_txn_man::run_txn(thread_t * h_thd, base_query * query) {
         } else {
           assert(req->rtype == WR);
           //					for (int fid = 0; fid < schema->get_field_cnt(); fid++) {
-          //int fid = 0;
-          //char * data = row->get_data();
-          //*(uint64_t *)(&data[fid * 10]) = 0;
+          int fid = 0;
+          char * data = row->get_data();
+          *(uint64_t *)(&data[fid * 10]) = 0;
           //					}
         }
       }

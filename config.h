@@ -39,7 +39,7 @@
 /***********************************************/
 // WAIT_DIE, NO_WAIT, DL_DETECT, TIMESTAMP, MVCC, HEKATON, HSTORE, OCC, VLL, TICTOC, SILO
 // TODO TIMESTAMP does not work at this moment
-#define CC_ALG 						OCC
+#define CC_ALG 						MVCC
 #define ISOLATION_LEVEL 			SERIALIZABLE
 
 // all transactions acquire tuples according to the primary key order.
@@ -72,9 +72,9 @@
 // [MVCC]
 // when read/write history is longer than HIS_RECYCLE_LEN
 // the history should be recycled.
-//#define HIS_RECYCLE_LEN				10
-//#define MAX_PRE_REQ					1024
-//#define MAX_READ_REQ				1024
+#define HIS_RECYCLE_LEN				10
+#define MAX_PRE_REQ					1024
+#define MAX_READ_REQ				1024
 #define MIN_TS_INTVL				5000000 //5 ms. In nanoseconds
 // [OCC]
 #define MAX_WRITE_SET				10

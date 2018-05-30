@@ -17,10 +17,11 @@ using namespace std;
 
 int main() {
   vector<double> zipf = {0, 0.3, 0.6, 0.9, 1.2, 1.5};
-  vector<int> scan = {0, 5, 10, 15, 20, 25};
+  vector<int> scan = {5, 10, 15, 20, 25};
   vector<int> scan_len = {10, 20, 30};
   vector<int> length = {10, 20, 30};
   vector<double> read = {40, 50, 60, 70};
+  vector<double> write = {0, 5, 10, 15, 20};
   vector<string> cc = {"hstore",    "silo",    "no_wait", "mvcc", "wait_die",
                        "dl_detect", "hekaton", "occ",     "vll",  "tictoc"};
 
@@ -29,7 +30,7 @@ int main() {
   int count = 0;
   for (size_t l = 0; l < scan_len.size(); l++) {
     for (size_t s = 0; s < scan.size(); s++) {
-      for (size_t r = 0; r < read.size(); r++) {
+      for (size_t w = 0; w < write.size(); w++) {
         for (size_t R = 0; R < length.size(); R++) {
           for (size_t z = 0; z < zipf.size(); z++) {
             map<double, int> comp;
@@ -37,18 +38,18 @@ int main() {
             stringstream ss(temp);
             vector<vector<string>> stats(10);
             for (size_t c = 1; c < cc.size(); c++) {
-              if (c == 0 || c == 7 || c == 8)
+              if (c == 0 || c==5 || c == 7 || c == 8)
                 continue;
               pid_t pid = fork();
               if (pid == 0) {
                 static char *argv[] = {
                     const_cast<char *>(cc[0].c_str()),
                     const_cast<char *>(
-                        string("-r" + to_string(read[r] / 100.0)).c_str()),
+                        string("-w" + to_string(write[w] / 100.0)).c_str()),
                     const_cast<char *>(
-                        string("-l" + to_string(scan_len[r])).c_str()),
+                        string("-l" + to_string(scan_len[l])).c_str()),
                     const_cast<char *>(
-                        string("-w" + to_string(1.0 - (read[r] / 100.0) -
+                        string("-r" + to_string(1.0 - (write[w] / 100.0) -
                                                 (scan[s] / 100.0)))
                             .c_str()),
                     const_cast<char *>(string("-e" + to_string(1)).c_str()),
@@ -70,11 +71,11 @@ int main() {
 
               if (c == 1) {
                 ss << count << "\t" << 100 << "\t" << 2 << "\t" << 0 << "\t"
-                   << zipf[z] << "\t" << length[R] << "\t" << read[r] << "\t" << scan[s] << "\t" << scan_len[l];
+                   << zipf[z] << "\t" << length[R] << "\t" << 100 - write[w] - scan[s] << "\t" << write[w] << "\t" << scan[s] << "\t" << scan_len[l];
                 out << count << "\t" << 100 << "\t" << 2 << "\t" << 0 << "\t"
-                    << zipf[z] << "\t" << length[R] << "\t" << read[r] << "\t" << scan[s] << "\t" << scan_len[l];
+                   << zipf[z] << "\t" << length[R] << "\t" << 100 - write[w] - scan[s] << "\t" << write[w] << "\t" << scan[s] << "\t" << scan_len[l];
                 stat << count << "\t" << 100 << "\t" << 2 << "\t" << 0 << "\t"
-                     << zipf[z] << "\t" << length[R] << "\t" << read[r] << "\t" << scan[s] << "\t" << scan_len[l];
+                   << zipf[z] << "\t" << length[R] << "\t" << 100 - write[w] - scan[s] << "\t" << write[w] << "\t" << scan[s] << "\t" << scan_len[l];
               }
               stat << "\t" << stats[c][7];
               comp[stod(stats[c][7])] = c;
