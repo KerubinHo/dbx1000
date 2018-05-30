@@ -16,19 +16,19 @@
 using namespace std;
 
 int main() {
-  vector<double> zipf = {0, 0.3, 0.6, 0.9, 1.2, 1.5};
+  vector<double> zipf = {0, 0.4, 0.8, 1.2, 1.6};
   vector<int> scan = {5, 10, 15, 20, 25};
   vector<int> scan_len = {10, 20, 30};
   vector<int> length = {10, 20, 30};
   vector<double> read = {40, 50, 60, 70};
-  vector<double> write = {0, 5, 10, 15, 20};
+  vector<double> write = {5, 10, 15, 20};
   vector<string> cc = {"hstore",    "silo",    "no_wait", "mvcc", "wait_die",
                        "dl_detect", "hekaton", "occ",     "vll",  "tictoc"};
 
   ofstream out("scan-train.out");
   ofstream stat("scan-stat.out");
   int count = 0;
-  for (size_t l = 0; l < scan_len.size(); l++) {
+  for (size_t l = 1; l < scan_len.size(); l++) {
     for (size_t s = 0; s < scan.size(); s++) {
       for (size_t w = 0; w < write.size(); w++) {
         for (size_t R = 0; R < length.size(); R++) {
